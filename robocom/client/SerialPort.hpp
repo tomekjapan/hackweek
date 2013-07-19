@@ -56,11 +56,69 @@ namespace client
 
 		~SerialPort () throw ();
 
+		/**
+		 * Returns whether this serial port is open
+		 */
+		bool isOpen () const throw ();
+
+		/**
+		 * Gets the baud rate for this serial port
+		 *
+		 * @return the baud rate
+		 *
+		 * @pre isOpen()
+		 */
+		BaudRate getBaudRate () const throw (std::system_error);
+
+		/**
+		 * Sets the baud rate for this serial port
+		 *
+		 * @param baud_rate the new baud rate
+		 *
+		 * @pre isOpen()
+		 */
+		void setBaudRate (BaudRate baud_rate) throw (std::system_error);
+
+		/**
+		 * Closes this serial port.
+		 */
+		void close () throw ();
+
+		/**
+		 * Prints the given string to the serial port.
+		 *
+		 * @param text the string to write
+		 */
+		void print (const std::string& text) const throw (std::system_error);
+
+		/**
+		 * Reads one newline-terminated string from the serial port
+		 *
+		 * The newline character is included in the returned string
+		 *
+		 * @return a string containing the read line
+		 */
+		std::string readln () const throw (std::system_error);
+
+		void dumpAttributes () const throw (std::system_error);
+
 	private:
 		SerialPort (const SerialPort& other);
 		SerialPort& operator= (const SerialPort& other);
 
 		void _configure (BaudRate baud_rate) const throw (std::system_error);
+
+		void _setSpeed (
+			void* p_mem,
+			BaudRate baud_rate
+		) const throw (
+			std::system_error
+		);
+
+		void _initAttributes(void* p_mem) const throw (std::system_error);
+		void _getAttributes(void* p_mem) const throw (std::system_error);
+		void _setAttributes(const void* p_mem) const throw (std::system_error);
+		void _flush () const throw (std::system_error);
 
 		static SysHandleType _openPort (
 			const std::string& port_name

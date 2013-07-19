@@ -19,31 +19,63 @@ namespace common
 
 #ifdef _ORDER_LITTLE_ENDIAN_
 
-	inline UInt16 hton (UInt16 v) throw () { return v; }
-	inline UInt32 hton (UInt32 v) throw () { return v; }
-	inline UInt16 ntoh (UInt16 v) throw () { return v; }
-	inline UInt32 ntoh (UInt32 v) throw () { return v; }
+	inline UInt16 ntoh_UInt16 (const UInt8* p_data) throw ()
+	{
+		return static_cast<UInt16>( p_data[0] )
+			|  static_cast<UInt16>( p_data[1] ) << 8;
+	}
+
+	inline UInt32 ntoh_UInt32 (const UInt8* p_data) throw ()
+	{
+		return static_cast<UInt32>( p_data[0] )
+			|  static_cast<UInt32>( p_data[1] ) << 8
+			|  static_cast<UInt32>( p_data[2] ) << 16
+			|  static_cast<UInt32>( p_data[3] ) << 24;
+	}
+
+	inline void hton_UInt16 (UInt8* p_data, UInt16 v) throw ()
+	{
+		p_data[0] = v & 0xFF;
+		p_data[1] = (v >> 8) & 0xFF;
+	}
+
+	inline void hton_UInt32 (UInt8* p_data, UInt32 v) throw ()
+	{
+		p_data[0] = v & 0xFF;
+		p_data[1] = (v >> 8) & 0xFF;
+		p_data[2] = (v >> 16) & 0xFF;
+		p_data[3] = (v >> 24) & 0xFF;
+	}
 
 #else
 
-	inline UInt16 swap_bytes (UInt16 v) throw ()
+	inline UInt16 ntoh_UInt16 (const UInt8* p_data) throw ()
 	{
-		return ((v & 0x00FF) << 8)
-			|  ((v & 0xFF00) >> 8);
+		return static_cast<UInt16>( p_data[1] )
+			|  static_cast<UInt16>( p_data[0] ) << 8;
 	}
 
-	inline UInt32 swap_bytes (UInt32 v) throw ()
+	inline UInt32 ntoh_UInt32 (const UInt8* p_data) throw ()
 	{
-		return ((v & 0x000000FF) << 24)
-			|  ((v & 0x0000FF00) << 8)
-			|  ((v & 0x00FF0000) >> 8)
-			|  ((v & 0xFF000000) >> 24);
+		return static_cast<UInt32>( p_data[3] )
+			|  static_cast<UInt32>( p_data[2] ) << 8
+			|  static_cast<UInt32>( p_data[1] ) << 16
+			|  static_cast<UInt32>( p_data[0] ) << 24;
 	}
 
-	inline UInt16 hton (UInt16 v) throw () { return swap_bytes(v); }
-	inline UInt32 hton (UInt32 v) throw () { return swap_bytes(v); }
-	inline UInt16 ntoh (UInt16 v) throw () { return swap_bytes(v); }
-	inline UInt32 ntoh (UInt32 v) throw () { return swap_bytes(v); }
+	inline void hton_UInt16 (UInt8* p_data, UInt16 v) throw ()
+	{
+		p_data[1] = v & 0xFF;
+		p_data[0] = (v >> 8) & 0xFF;
+	}
+
+	inline void hton_UInt32 (UInt8* p_data, UInt32 v) throw ()
+	{
+		p_data[3] = v & 0xFF;
+		p_data[2] = (v >> 8) & 0xFF;
+		p_data[1] = (v >> 16) & 0xFF;
+		p_data[0] = (v >> 24) & 0xFF;
+	}
 
 #endif
 

@@ -5,7 +5,7 @@
 #include "common/ErrorReporting.hpp"
 
 // Module header
-#include "Handle.hpp"
+#include "../Handle.hpp"
 
 namespace robocom {
 namespace client

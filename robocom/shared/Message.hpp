@@ -1,14 +1,14 @@
 #ifndef ROBOCOM_SHARED_MESSAGE_HPP
 #define ROBOCOM_SHARED_MESSAGE_HPP
 
-#include "common/Base.hpp"
+#include "shared_base.hpp"
 
 namespace robocom {
 namespace shared
 {
 
 	/**
-	 * This class implements the message layer for the communication
+	 * This class implements the base message layout for the communication
 	 * protocol with arduino
 	 *
 	 * Message exchange is initiated by the client (PC). One message is sent
@@ -108,7 +108,10 @@ namespace shared
 		/**
 		 * Returns the current size of the payload in this message
 		 */
-		UInt8 getDataSize () const throw ();
+		UInt8 getDataSize () const throw ()
+		{
+			return m_data_size;
+		}
 
 		/**
 		 * Returns the maximum size of the payload that can fit in this
@@ -124,7 +127,10 @@ namespace shared
 		 * Returns the ID of the task associated with this message, or
 		 * zero if there is no such task
 		 */
-		UInt16 getTaskId () const throw ();
+		UInt16 getTaskId () const throw ()
+		{
+			return m_task_id;
+		}
 
   		/**
 		 * Returns the type of the message
@@ -188,19 +194,16 @@ namespace shared
 		///@{
 
 		/**
+		 * Sets everything to zero/false
+		 */
+		void clear () throw ();
+
+		/**
 		 * Sets the data size in this message.
 		 *
 		 * @pre size <= getMaxDataSize()
 		 */
 		void setDataSize (UInt8 size) throw ();
-
-		/**
-		 * Sets the ID of the task to associate with this message
-		 *
-		 * @param task_id the ID of the task, or zero to make this
-		 *   message not associated with any tasks
-		 */
-		void setTaskId (UInt16 task_id) throw ();
 
 		/**
 		 * Sets the the message type to associate with this message
@@ -210,6 +213,17 @@ namespace shared
 		 * @pre message_type <= MAX_MESSAGE_TYPE
 		 */
 		void setMessageType (UInt8 message_type) throw ();
+
+		/**
+		 * Sets the ID of the task to associate with this message
+		 *
+		 * @param task_id the ID of the task, or zero to make this
+		 *   message not associated with any tasks
+		 */
+		void setTaskId (UInt16 task_id) throw ()
+		{
+			m_task_id = task_id;
+		}
 
 		/**
 		 * Sets the immediate execution status of this message.
@@ -274,11 +288,28 @@ namespace shared
 
 		///@}
 
+
+		/// @name Methods
+		///@{
+
+		/**
+		 * Compares this message to another one with respect to the
+		 * priority of execution
+		 *
+		 * @return value smaller than 0 if this message should be
+		 *   processed before the other, value larger than 0 if the other
+		 *   message should be processed before this one, and 0 if
+		 *   both messages are equally prioritized
+		 */
+		int comparePriority (const Message& other) const throw ();
+
+		///@}
+
 	private:
 
 		enum
 		{
-			// A flag of the _code indicating that the message
+			// A flag of the m_message_type indicating that the message
 			// does not carry the millis
 			IMMEDIATE_BIT = 0x80
 		};

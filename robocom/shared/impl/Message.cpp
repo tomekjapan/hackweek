@@ -1,5 +1,3 @@
-#include "common/ErrorReporting.hpp"
-
 #include "../Message.hpp"
 
 namespace robocom {
@@ -9,13 +7,6 @@ namespace shared
 	using namespace common;
 
 	UInt8
-	Message::getDataSize () const throw ()
-	{
-		return m_data_size;
-	}
-
-	
-	UInt8
 	Message::getMaxDataSize () const throw ()
 	{
 		if ( isImmediate() ) {
@@ -24,13 +15,6 @@ namespace shared
 		else {
 			return MAX_DATA_SIZE - 4;
 		}
-	}
-
-
-	UInt16
-	Message::getTaskId () const throw ()
-	{
-		return m_task_id;
 	}
 
 
@@ -55,7 +39,7 @@ namespace shared
 			return 0;
 		}
 
-		return getUInt32(0);
+		return ntoh_UInt32( m_data );
 	}
 
 
@@ -63,6 +47,10 @@ namespace shared
 	Message::getUInt8 (unsigned offset) const throw ()
 	{
 		USE_CONTRACT_CHECK( offset <= getDataSize() - 1u );
+
+		if ( ! isImmediate() ) {
+			offset += 4u;
+		}
 
 		return m_data[ offset ];
 	}
@@ -73,7 +61,11 @@ namespace shared
 	{
 		USE_CONTRACT_CHECK( offset <= getDataSize() - 2u );
 
-		return ntoh( reinterpret_cast<const UInt16&>( m_data[ offset ] ) );
+		if ( ! isImmediate() ) {
+			offset += 4u;
+		}
+
+		return ntoh_UInt16( m_data + offset );
 	}
 	
 
@@ -82,7 +74,24 @@ namespace shared
 	{
 		USE_CONTRACT_CHECK( offset <= getDataSize() - 4u );
 
-		return ntoh( reinterpret_cast<const UInt32&>( m_data[ offset ] ) );
+		if ( ! isImmediate() ) {
+			offset += 4u;
+		}
+
+		return ntoh_UInt32( m_data + offset );
+	}
+
+
+	void
+	Message::clear () throw ()
+	{
+		m_data_size = 0;
+		m_message_type = 0;
+		m_task_id = 0;
+
+		for ( unsigned i = 0; i < sizeof(m_data); i++ ) {
+			m_data[i] = 0;
+		}
 	}
 
 
@@ -92,13 +101,6 @@ namespace shared
 		USE_CONTRACT_CHECK( size <= getMaxDataSize() );
 
 		m_data_size = size;
-	}
-
-
-	void
-	Message::setTaskId (UInt16 task_id) throw ()
-	{
-		m_task_id = task_id;
 	}
 
 
@@ -119,8 +121,8 @@ namespace shared
 			m_message_type |= IMMEDIATE_BIT;
 
 			const int size = m_data_size;
-			for ( int i = 4; i < size; i++ ) {
-				m_data[i-4] = m_data[i];
+			for ( int i = 0; i < size; i++ ) {
+				m_data[i] = m_data[i+4];
 			}
 		}
 	}
@@ -135,12 +137,12 @@ namespace shared
 		{
 			m_message_type &= ~IMMEDIATE_BIT;
 
-			for ( int i = m_data_size - 1; i >= 4; i-- ) {
-				m_data[i] = m_data[i-4];
+			for ( int i = m_data_size - 1; i >= 0; i-- ) {
+				m_data[i+4] = m_data[i];
 			}
 		}
-	
-		setUInt32( 0, ms );
+
+		hton_UInt32( m_data, ms );
 	}
 
 
@@ -148,6 +150,10 @@ namespace shared
 	Message::setUInt8 (unsigned offset, UInt8 value) throw ()
 	{
 		USE_CONTRACT_CHECK( offset <= getDataSize() - 1u );
+
+		if ( ! isImmediate() ) {
+			offset += 4u;
+		}
 
 		m_data[offset] = value;
 	}
@@ -158,7 +164,11 @@ namespace shared
 	{
 		USE_CONTRACT_CHECK( offset <= getDataSize() - 2u );
 
-		reinterpret_cast<UInt16&>( m_data[offset] ) = hton( value );
+		if ( ! isImmediate() ) {
+			offset += 4u;
+		}
+
+		hton_UInt16( m_data + offset, value );
 	}
 
 
@@ -167,7 +177,40 @@ namespace shared
 	{
 		USE_CONTRACT_CHECK( offset <= getDataSize() - 4u );
 
-		reinterpret_cast<UInt32&>( m_data[offset] ) = hton( value );
+		if ( ! isImmediate() ) {
+			offset += 4u;
+		}
+
+		hton_UInt32( m_data + offset, value );
+	}
+
+
+	int
+	Message::comparePriority (const Message& other) const throw ()
+	{
+		if ( isImmediate() )
+		{
+			if ( other.isImmediate() ) {
+				return 0;
+			}
+			else {
+				return -1;
+			}
+		}
+		else
+		{
+			if ( other.isImmediate() ) {
+				return 1;
+			}
+			else if ( getMillis() < other.getMillis() ) {
+				return -1;
+			}
+			else if ( getMillis() > other.getMillis() ) {
+				return 1;
+			}
+		}
+
+		return 0;
 	}
 
 } }
