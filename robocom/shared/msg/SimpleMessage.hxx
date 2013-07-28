@@ -1,10 +1,9 @@
 #ifndef ROBOCOM_SHARED_MSG_NOOP_REQUEST_HPP
 #define ROBOCOM_SHARED_MSG_NOOP_REQUEST_HPP
 
-#include "../Message.hpp"
+#include "msg_base.hpp"
 
-#include "MessageTypes.hpp"
-#include "MessageStatus.hpp"
+#include "../Message.hpp"
 
 namespace robocom {
 namespace shared {
@@ -56,13 +55,14 @@ namespace msg
 		/**
 		 * Constructor
 		 */
-		SimpleMessage () throw ()
+		SimpleMessage (UInt16 task_id) throw ()
 			: m_msg( )
 		{
 			m_msg.clear();
 			m_msg.setMessageType( MSGID );
 			m_msg.setDataSize( DATA_SIZE );
 			m_msg.setImmediate();
+			m_msg.setTaskId( task_id );
 		}
 
 		/**
@@ -117,6 +117,15 @@ namespace msg
 			}
 
 			return STATUS_OK;
+		}
+
+  		/**
+		 * Returns the ID of the task associated with this message, or
+		 * zero if there is no such task
+		 */
+		UInt16 getTaskId () const throw ()
+		{
+			return m_msg.getTaskId();
 		}
 
 	private:

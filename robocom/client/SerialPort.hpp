@@ -1,9 +1,14 @@
 #ifndef ROBOCOM_CLIENT_SERIAL_PORT_HPP
 #define ROBOCOM_CLIENT_SERIAL_PORT_HPP
 
+#include "client_base.hpp"
+
 // System headers
 #include <string>
 #include <system_error>
+
+// External component headers
+#include "robocom/shared/StreamIO.hpp"
 
 // Component headers
 #include "Handle.hpp"
@@ -42,6 +47,7 @@ namespace client
 	 * the client and the robot over a serial port.
 	 */
 	class SerialPort
+		: public shared::StreamIO
 	{
 	public:
 
@@ -54,7 +60,7 @@ namespace client
 			std::system_error
 		);
 
-		~SerialPort () throw ();
+		virtual ~SerialPort () throw ();
 
 		/**
 		 * Returns whether this serial port is open
@@ -85,11 +91,90 @@ namespace client
 		void close () throw ();
 
 		/**
-		 * Prints the given string to the serial port.
+		 * Returns the number of bytes immediately available for reading
 		 *
-		 * @param text the string to write
+		 * @return the number available bytes
 		 */
-		void print (const std::string& text) const throw (std::system_error);
+		virtual int available () throw (std::system_error);
+
+		/**
+		 * Blocks until some data are available for reading
+		 */
+		void awaitAvailable () throw (std::system_error);
+
+		/**
+		 * Returns the next byte available for reading without removing
+		 * it from the stream
+		 *
+		 * @return the byte value or -1 if no bytes are available
+		 */
+		virtual int peek () throw (std::system_error);
+
+		/**
+		 * Reads the next available byte
+		 *
+		 * @return the byte value or -1 if no bytes are available
+		 */
+		virtual int read () throw (std::system_error);
+
+		/**
+		 * Reads at most the given number of bytes into the given buffer
+		 * without blocking
+		 *
+		 * @param p_buffer the place to store the read bytes
+		 * @param size the number of bytes to read
+		 *
+		 * @return the actual number of bytes read
+		 */
+		UInt32 read (
+			UInt8* p_buffer,
+			UInt32 size
+		) throw (
+			std::system_error
+		);
+		
+		/**
+		 * Reads at most the given number of bytes into the given buffer
+		 * without blocking
+		 *
+		 * @param p_buffer the place to store the read bytes
+		 * @param size the number of bytes to read
+		 *
+		 * @return the actual number of bytes read
+		 */
+		virtual UInt32 readBytes (
+			char* p_buffer,
+			UInt32 size
+		) throw (
+			std::system_error
+		);
+
+		/**
+		 * Writes one byte of data to the stream
+		 *
+		 * This function will block until the byte has been written
+		 *
+		 * @param b the byte to write
+		 *
+		 * @return the number of bytes written
+		 */
+		virtual UInt32 write (UInt8 b) throw (std::system_error);
+
+		/**
+		 * Write at most the given number of bytes from the given buffer
+		 * blocking until all data have been written
+		 *
+		 * @param p_buffer the bytes two write
+		 * @param size the number of bytes to write
+		 *
+		 * @return the number of bytes written
+		 */
+		virtual UInt32 write (
+			const UInt8* p_buffer,
+			UInt32 size
+		) throw (
+			std::system_error
+		);
 
 		/**
 		 * Reads one newline-terminated string from the serial port
@@ -98,8 +183,18 @@ namespace client
 		 *
 		 * @return a string containing the read line
 		 */
-		std::string readln () const throw (std::system_error);
+		std::string readln () throw (std::system_error);
 
+		/**
+		 * Prints the given string to the serial port.
+		 *
+		 * @param text the string to write
+		 */
+		void print (const std::string& text) throw (std::system_error);
+
+		/**
+		 * Dumps attributes of this object to the standard output
+		 */
 		void dumpAttributes () const throw (std::system_error);
 
 	private:
@@ -128,6 +223,8 @@ namespace client
 
 		Handle m_handle;
 		std::string m_port_name;
+		int m_peeked_byte;
+		UInt8* const m_p_old_config;
 	};
 
 } }

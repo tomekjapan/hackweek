@@ -8,7 +8,7 @@ namespace shared
 {
 
 	/**
-	 * This class implements a node of a single list that contains
+	 * This class implements a node of a singly linked list that contains
 	 * a Message object
 	 *
 	 * Classes that maintain collections of Message objects, such as

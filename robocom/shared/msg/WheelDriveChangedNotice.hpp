@@ -20,12 +20,13 @@ namespace msg
 	public:
 
 		/// The message type for instances of this class
-		enum { MSGID = RemoconMessageTypes::MSGID_WHEEL_DRIVE_CHANGED };
+		enum { MSGID = RobocomMessageTypes::MSGID_WHEEL_DRIVE };
 
 		/**
 		 * Constructor
 		 */
 		WheelDriveChangedNotice (
+			UInt16 task_id,
 			UInt32 current_millis,
 			UInt8 motor_1_direction,
 			UInt8 motor_1_signal,
@@ -66,6 +67,15 @@ namespace msg
 		 *    is neither 0 nor 1
 		 */
 		MessageStatus validate () const throw ();
+
+  		/**
+		 * Returns the ID of the task associated with this message, or
+		 * zero if there is no such task
+		 */
+		UInt16 getTaskId () const throw ()
+		{
+			return m_msg.getTaskId();
+		}
 
 		/**
 		 * Returns the direction in which the motor signal is applied

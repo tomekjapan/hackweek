@@ -17,6 +17,7 @@ namespace shared
 	{
 		CHECK_EQUAL( (int) a.getMessageType(), (int) b.getMessageType() );
 		CHECK_EQUAL( a.isImmediate(), b.isImmediate() );
+		CHECK_EQUAL( a.getTaskId(), b.getTaskId() );
 		CHECK_EQUAL( a.getMillis(), b.getMillis() );
 		CHECK_EQUAL( (int) a.getDataSize(), (int) b.getDataSize() );
 		for ( int i = 0; i < a.getDataSize(); i++ ) {
@@ -35,14 +36,14 @@ namespace shared
 			CHECK( ! q.pop( msg, 1000u ) );
 
 			{
-				FlushResponse r( 123u, 3, 5, 7, 6, 4, 2 );
+				FlushResponse r( 99, 123u, 3, 5, 7, 6, 4, 2 );
 				CHECK( q.push( r.asMessage() ) );
 				CHECK( q.pop( msg, 1000u ) );
 				__checkEqual( msg, r.asMessage() );
 			}
 
 			{
-				SetWheelDriveRequest r( 1, 230, 0, 11 );
+				SetWheelDriveRequest r( 98, 1, 230, 0, 11 );
 				CHECK( q.push( r.asMessage() ) );
 				CHECK( q.pop( msg, 1000u ) );
 				__checkEqual( msg, r.asMessage() );
@@ -56,13 +57,13 @@ namespace shared
 			MessagePool p;
 			MessageQueue q(p);
 			
-			SetWheelDriveRequest r1( 5u, 0, 1, 0, 0 );
-			SetWheelDriveRequest r2( 0, 2, 0, 0 );
-			SetWheelDriveRequest r3( 0u, 0, 3, 0, 0 );
-			SetWheelDriveRequest r4( 0, 4, 0, 0 );
-			SetWheelDriveRequest r5( 0u, 0, 5, 0, 0 );
-			SetWheelDriveRequest r6( 3u, 0, 6, 0, 0 );
-			SetWheelDriveRequest r7( 10u, 0, 7, 0, 0 );
+			SetWheelDriveRequest r1( 88, 5u, 0, 1, 0, 0 );
+			SetWheelDriveRequest r2( 87, 0, 2, 0, 0 );
+			SetWheelDriveRequest r3( 86, 0u, 0, 3, 0, 0 );
+			SetWheelDriveRequest r4( 85, 0, 4, 0, 0 );
+			SetWheelDriveRequest r5( 84, 0u, 0, 5, 0, 0 );
+			SetWheelDriveRequest r6( 83, 3u, 0, 6, 0, 0 );
+			SetWheelDriveRequest r7( 82, 10u, 0, 7, 0, 0 );
 
 			q.push( r1.asMessage() );
 			q.push( r2.asMessage() );
@@ -132,6 +133,21 @@ namespace shared
 				s--;
 			}
 			while ( q.pop( m, 1u ) );
+		}
+
+		TEST(Clear)
+		{
+			MessagePool p;
+			MessageQueue q(p);
+			Message m;
+			m.clear();
+
+			// Fill up the queue with messages
+			while ( q.push( m ) );
+
+			q.clear();
+			CHECK_EQUAL( q.getSize(), 0 );
+			CHECK( q.push( m ) );
 		}
 	}
 

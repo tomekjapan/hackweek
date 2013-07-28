@@ -1,3 +1,5 @@
+#include "../StreamIO.hpp"
+
 #include "../Message.hpp"
 
 namespace robocom {
@@ -5,6 +7,7 @@ namespace shared
 {
 
 	using namespace common;
+
 
 	UInt8
 	Message::getMaxDataSize () const throw ()
@@ -18,6 +21,13 @@ namespace shared
 	}
 
 
+	UInt8
+	Message::getMessageType () const throw ()
+	{
+		return m_message_type & ~IMMEDIATE_BIT;
+	}
+
+
 	bool
 	Message::isImmediate () const throw ()
 	{
@@ -25,10 +35,10 @@ namespace shared
 	}
 
 
-	UInt8
-	Message::getMessageType () const throw ()
+	UInt16
+	Message::getTaskId () const throw ()
 	{
-		return m_message_type & ~IMMEDIATE_BIT;
+		return ntoh_UInt16( m_task_id );
 	}
 
 
@@ -87,7 +97,8 @@ namespace shared
 	{
 		m_data_size = 0;
 		m_message_type = 0;
-		m_task_id = 0;
+		m_task_id[0] = 0;
+		m_task_id[1] = 0;
 
 		for ( unsigned i = 0; i < sizeof(m_data); i++ ) {
 			m_data[i] = 0;
@@ -125,6 +136,13 @@ namespace shared
 				m_data[i] = m_data[i+4];
 			}
 		}
+	}
+
+
+	void
+	Message::setTaskId (UInt16 task_id) throw ()
+	{
+		hton_UInt16( m_task_id, task_id );
 	}
 
 
@@ -211,6 +229,33 @@ namespace shared
 		}
 
 		return 0;
+	}
+
+
+	void
+	Message::deserializeFrom (StreamIO& stream)
+	{
+		// The caller (MessageIO) has verified that the data size
+		// is in the valid range, and that there are enough data in the
+		// output buffer to read the whole message.
+
+		m_data_size = stream.read() - HEADER_SIZE;
+		m_message_type = stream.read();
+		stream.readBytes( (char*) m_task_id, sizeof(m_task_id) );
+
+		if ( m_data_size > 0 ) {
+			stream.readBytes( (char*) m_data, m_data_size );
+		}
+	}
+
+
+	void
+	Message::serializeTo (StreamIO& stream) const
+	{
+		stream.write( m_data_size + HEADER_SIZE );
+		stream.write( m_message_type );
+		stream.write( m_task_id, sizeof(m_task_id) );
+		stream.write( m_data, m_data_size );
 	}
 
 } }

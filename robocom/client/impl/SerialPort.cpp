@@ -5,6 +5,7 @@
 #include <sstream>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 // External component headers
 #include "common/ErrorReporting.hpp"
@@ -19,6 +20,8 @@ namespace robocom {
 namespace client
 {
 	using namespace std;
+	using namespace robocom::shared;
+
 
 	static ::speed_t __toNative (BaudRate baud_rate) throw ()
 	{
@@ -117,6 +120,8 @@ namespace client
 	SerialPort::SerialPort () throw ()
 		: m_handle( )
 		, m_port_name( )
+		, m_peeked_byte( -1 )
+		, m_p_old_config( )
 	{ }
 
 
@@ -128,6 +133,8 @@ namespace client
 	)
 		: m_handle( _openPort( port_name ) )
 		, m_port_name( port_name )
+		, m_peeked_byte( -1 )
+		, m_p_old_config( new UInt8[ sizeof(::termios) ] )
 	{
 		_configure( baud_rate );
 	}
@@ -136,6 +143,8 @@ namespace client
 	SerialPort::~SerialPort () throw ()
 	{
 		close();
+
+		delete [] m_p_old_config;
 	}
 
 		
@@ -174,93 +183,190 @@ namespace client
 	void
 	SerialPort::close () throw ()
 	{
-		m_handle.close();
+		if ( isOpen() )
+		{
+			try
+			{
+				_setAttributes( m_p_old_config );
+			}
+			catch ( system_error& e )
+			{
+				NCR_UNEXPECTED(
+					"failed to reset attributes upon serial port close"
+				);
+			}
+
+			m_handle.close();
+		}
+	}
+
+
+	int
+	SerialPort::available () throw (system_error)
+	{
+		int num = -1;
+
+		if ( ::ioctl(m_handle.getNative(), FIONREAD, & num) < 0 )
+		{
+			THROW_SYSTEM_ERROR(
+				"Error getting number of availale bytes for " + m_port_name
+			);
+		}
+
+		if ( m_peeked_byte >= 0 ) {
+			num++;
+		}
+
+		return num;
 	}
 
 
 	void
-	SerialPort::print (const string& text) const throw (system_error)
+	SerialPort::awaitAvailable () throw (system_error)
 	{
+		if ( m_peeked_byte >= 0 || available() > 0 ) {
+			return;
+		}
+
 		const SysHandleType fd = m_handle.getNative();
 
-		::fd_set wrset;
-		FD_ZERO( & wrset );
-		FD_SET( m_handle.getNative(), & wrset );
+		::fd_set rdset;
+		FD_ZERO( & rdset );
+		FD_SET( fd, & rdset );
 
-		const char* p_data = text.c_str();
-		size_t count = text.size();
-
-		while ( count > 0 )
+		do
 		{
-			::timeval tv;
-			tv.tv_sec = 0;
-			tv.tv_usec = 200000;
-
-			if ( ::select( fd + 1, NULL, & wrset, NULL, & tv ) < 0 )
+			if ( ::select( fd + 1, & rdset, NULL, NULL, NULL ) < 0 )
 			{
-				THROW_SYSTEM_ERROR(
-					"Error blocking for output on " + m_port_name
-				);
+				if ( errno != EINTR )
+				{
+					THROW_SYSTEM_ERROR(
+						"Error blocking for input on " + m_port_name
+					);
+				}
 			}
+		}
+		while ( ! FD_ISSET( fd, & rdset ) );
+	}
 
-			if ( ! FD_ISSET( fd, & wrset ) ) {
-				continue;
-			}
 
-			const ::ssize_t num =
-				::write( m_handle.getNative(), p_data, count );
+	int
+	SerialPort::peek () throw (system_error)
+	{
+		if ( m_peeked_byte < 0 ) {
+			m_peeked_byte = read();
+		}
+
+		return m_peeked_byte;
+	}
+
+
+	int
+	SerialPort::read () throw (system_error)
+	{
+		UInt8 b = 0;
+		if ( read( & b, 1 ) == 0 ) {
+			return -1;
+		}
+		return b;
+	}
+
+
+	UInt32
+	SerialPort::read (UInt8* p_buffer, UInt32 size) throw (system_error)
+	{
+		if ( size == 0 ) {
+			return 0;
+		}
+
+		const SysHandleType fd = m_handle.getNative();
+		UInt32 total = 0;
+
+		if ( m_peeked_byte >= 0 )
+		{
+			* p_buffer++ = static_cast<UInt8>(m_peeked_byte);
+			total++;
+			m_peeked_byte = -1;
+		}
+
+		const ::ssize_t num = ::read( fd, p_buffer, size - total );
+
+		if ( num >= 0 ) {
+			total += num;
+		}
+		else if ( errno != EINTR ) {
+			THROW_SYSTEM_ERROR( "error reading from " + m_port_name );
+		}
+
+		return total;
+	}
+
+
+	UInt32
+	SerialPort::readBytes (char* p_buffer, UInt32 size) throw (system_error)
+	{
+		return read( reinterpret_cast<UInt8*>(p_buffer), size );
+	}
+
+
+	UInt32
+	SerialPort::write (UInt8 b) throw (system_error)
+	{
+		return write( &b, 1 );
+	}
+
+
+	UInt32
+	SerialPort::write (
+		const UInt8* p_buffer,
+		UInt32 size
+	) throw (
+		system_error
+	)
+	{
+		const SysHandleType fd = m_handle.getNative();
+		
+		UInt32 remaining = size;
+
+		while ( remaining > 0 )
+		{
+			const ::ssize_t num = ::write( fd, p_buffer, remaining );
 
 			if ( num >= 0 )
 			{
-				count -= num;
-				p_data += num;
+				remaining -= num;
+				p_buffer += num;
 			}
 			else if ( errno != EINTR ) {
 				THROW_SYSTEM_ERROR( "error writing to " + m_port_name );
 			}
 		}
+
+		return size;
 	}
 
 
 	string
-	SerialPort::readln () const throw (system_error)
+	SerialPort::readln () throw (system_error)
 	{
-		const SysHandleType fd = m_handle.getNative();
-
-		::fd_set rdset;
-		FD_ZERO( & rdset );
-		FD_SET( m_handle.getNative(), & rdset );
-
 		ostringstream sb;
 
 		char c = 0;
 		while ( c != '!' )
 		{
-			::timeval tv;
-			tv.tv_sec = 0;
-			tv.tv_usec = 200000;
-
-			if ( ::select( fd + 1, & rdset, NULL, NULL, & tv ) < 0 )
-			{
-				THROW_SYSTEM_ERROR(
-					"Error blocking for input on " + m_port_name
-				);
-			}
-
-			if ( ! FD_ISSET( fd, & rdset ) ) {
-				continue;
-			}
-
-			const ::ssize_t num = ::read( fd, & c, 1 );
-			if ( num > 0 ) {
-				sb.put( c );
-			}
-			else if ( num < 0 ) {
-				THROW_SYSTEM_ERROR( "error reading from " + m_port_name );
-			}
+			awaitAvailable();
+			c = (char) read();
+			sb.put( c );
 		}
 
 		return sb.str();
+	}
+
+
+	void
+	SerialPort::print (const string& text) throw (system_error)
+	{
+		write( reinterpret_cast<const UInt8*>( text.c_str() ), text.size() );
 	}
 
 
@@ -282,24 +388,15 @@ namespace client
 	void
 	SerialPort::_configure (BaudRate baud_rate) const throw (system_error)
 	{
+		// Save the current settings of the serial port. We are going to
+		// set it up as non-blocking what doesn't play well with some
+		// applications. For example, avrdude will fail to upload
+		// the firmware - it requires blocking reads.
+		_getAttributes( m_p_old_config );
+
 		::termios tio;
-		_getAttributes( & tio );
 
-		tio.c_iflag &= ~IGNBRK;
-		tio.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-		tio.c_oflag &= ~OPOST;
-
-		tio.c_cc[VMIN] = 0;
-		tio.c_cc[VTIME] = 0;
-
-		tio.c_iflag &= ~(IXON | IXOFF | IXANY);
-		tio.c_cflag |= (CLOCAL | CREAD | CS8);
-
-		tio.c_cflag &= ~PARENB;
-		tio.c_cflag &= ~PARODD;
-		tio.c_cflag &= ~CSTOPB;
-		tio.c_cflag &= ~CRTSCTS;
-
+		_initAttributes( & tio );
 		_setSpeed( & tio, baud_rate );
 		_flush();
 		_setAttributes( & tio );
@@ -317,7 +414,7 @@ namespace client
 		p_tio->c_oflag = 0;
 		p_tio->c_lflag = 0;
 		p_tio->c_cc[VTIME] = 0;
-		p_tio->c_cc[VMIN] = 1;
+		p_tio->c_cc[VMIN] = 0;
 	}
 
 

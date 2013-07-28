@@ -6,6 +6,7 @@ namespace msg
 {
 
 	SetWheelDriveRequest::SetWheelDriveRequest (
+		UInt16 task_id,
 		UInt32 current_millis,
 		UInt8 motor_1_direction,
 		UInt8 motor_1_signal,
@@ -17,6 +18,7 @@ namespace msg
 		m_msg.clear();
 		m_msg.setMessageType( MSGID );
 		m_msg.setDataSize( DATA_SIZE );
+		m_msg.setTaskId( task_id );
 		m_msg.setMillis( current_millis );
 		m_msg.setUInt8( OFFSET_MOTOR_1_DIRECTION, motor_1_direction );
 		m_msg.setUInt8( OFFSET_MOTOR_1_SIGNAL, motor_1_signal );
@@ -26,6 +28,7 @@ namespace msg
 
 
 	SetWheelDriveRequest::SetWheelDriveRequest (
+		UInt16 task_id,
 		UInt8 motor_1_direction,
 		UInt8 motor_1_signal,
 		UInt8 motor_2_direction,
@@ -36,6 +39,7 @@ namespace msg
 		m_msg.clear();
 		m_msg.setMessageType( MSGID );
 		m_msg.setDataSize( DATA_SIZE );
+		m_msg.setTaskId( task_id );
 		m_msg.setImmediate();
 		m_msg.setUInt8( OFFSET_MOTOR_1_DIRECTION, motor_1_direction );
 		m_msg.setUInt8( OFFSET_MOTOR_1_SIGNAL, motor_1_signal );

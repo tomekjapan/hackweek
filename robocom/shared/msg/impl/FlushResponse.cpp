@@ -6,6 +6,7 @@ namespace msg
 {
 
 	FlushResponse::FlushResponse (
+		UInt16 task_id,
 		UInt32 current_millis,
 		UInt8 min_free_slots,
 		UInt8 free_slots,
@@ -19,6 +20,7 @@ namespace msg
 		m_msg.clear();
 		m_msg.setMessageType( MSGID );
 		m_msg.setDataSize( DATA_SIZE );
+		m_msg.setTaskId( task_id );
 		m_msg.setMillis( current_millis );
 		m_msg.setUInt8( OFFSET_MIN_FREE_SLOTS, min_free_slots );
 		m_msg.setUInt8( OFFSET_FREE_SLOTS, free_slots );

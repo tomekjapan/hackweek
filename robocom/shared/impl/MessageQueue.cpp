@@ -14,6 +14,20 @@ namespace shared
 	{ }
 
 
+	void
+	MessageQueue::clear () throw ()
+	{
+		while ( 0 != m_p_head )
+		{
+			MessageListNode* const p_node = m_p_head;
+			m_p_head = m_p_head->getNext();
+			m_p_pool->free( p_node );
+		}
+
+		m_size = 0;
+	}
+
+
 	bool
 	MessageQueue::push (const Message& msg) throw ()
 	{
@@ -69,7 +83,7 @@ namespace shared
 		}
 
 		// Unlink the command from the queue
-		MessageListNode* const p_node = m_p_head;
+  		MessageListNode* const p_node = m_p_head;
 		m_p_head = m_p_head->getNext();
 		m_size--;
 

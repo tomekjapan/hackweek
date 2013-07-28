@@ -23,16 +23,14 @@ namespace msg
 	};
 
 	/**
-	 * Definitions of message type IDs for the remocon app
+	 * Definitions of message type IDs for the robocom app
 	 */
-	class RemoconMessageTypes
+	class RobocomMessageTypes
 	{
 	public:
 		enum
 		{
-			MSGID_SET_WHEEL_DRIVE = CommonMessageTypes::LAST,
-			MSGID_WHEEL_DRIVE_CHANGED,
-			MSGID_ENCODER_SUBSCRIBE,
+			MSGID_WHEEL_DRIVE = CommonMessageTypes::LAST,
 			MSGID_ENCODER_READING,
 			LAST
 		};

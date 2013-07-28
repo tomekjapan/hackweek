@@ -77,6 +77,8 @@ namespace shared
 	 */
 	class Message
 	{
+		friend class MessageIO;
+
 	public:
 
 		/// @name Exported Constants
@@ -124,15 +126,6 @@ namespace shared
 		UInt8 getMaxDataSize () const throw ();
 
   		/**
-		 * Returns the ID of the task associated with this message, or
-		 * zero if there is no such task
-		 */
-		UInt16 getTaskId () const throw ()
-		{
-			return m_task_id;
-		}
-
-  		/**
 		 * Returns the type of the message
 		 */
 		UInt8 getMessageType () const throw ();
@@ -145,6 +138,12 @@ namespace shared
 		 * on arduino before messages not marked as immediate.
 		 */
 		bool isImmediate () const throw ();
+
+  		/**
+		 * Returns the ID of the task associated with this message, or
+		 * zero if there is no such task
+		 */
+		UInt16 getTaskId () const throw ();
 
 		/**
 		 * Returns millis in arduino at which this message should be
@@ -215,17 +214,6 @@ namespace shared
 		void setMessageType (UInt8 message_type) throw ();
 
 		/**
-		 * Sets the ID of the task to associate with this message
-		 *
-		 * @param task_id the ID of the task, or zero to make this
-		 *   message not associated with any tasks
-		 */
-		void setTaskId (UInt16 task_id) throw ()
-		{
-			m_task_id = task_id;
-		}
-
-		/**
 		 * Sets the immediate execution status of this message.
 		 *
 		 * Messages marked as immediate will be prioritized for processing
@@ -235,6 +223,14 @@ namespace shared
 		 * @post isImmediate() == 0
 		 */
 		void setImmediate () throw ();
+
+		/**
+		 * Sets the ID of the task to associate with this message
+		 *
+		 * @param task_id the ID of the task, or zero to make this
+		 *   message not associated with any tasks
+		 */
+		void setTaskId (UInt16 task_id) throw ();
 
 		/**
 		 * Sets the time in millis on arduino when this message should
@@ -307,16 +303,50 @@ namespace shared
 
 	private:
 
+		/// @name Friend Access
+		///@{
+
+		/**
+		 * Reads this object from the given stream
+		 *
+		 * The stream must have enough bytes available for the whole message.
+		 * If this function throws an exception, this object is in undetermined
+		 * state.
+		 *
+		 * @param stream the stream to read from
+		 */
+		void deserializeFrom (StreamIO& stream);
+
+		/**
+		 * Writes this object to the given stream
+		 *
+		 * If this function throws, the object could have been written only
+		 * partially.
+		 *
+		 * @param stream the stream to write to
+		 */
+		void serializeTo (StreamIO& stream) const;
+
+		///@}
+
+	private:
+
 		enum
 		{
 			// A flag of the m_message_type indicating that the message
 			// does not carry the millis
-			IMMEDIATE_BIT = 0x80
+			IMMEDIATE_BIT = 0x80,
+
+			// The four bytes in the header are:
+			// - 1 byte:	message size
+			// - 1 byte:	message type + immediate bit
+			// - 2 bytes:	task ID
+			HEADER_SIZE = 4
 		};
 
 		UInt8 m_data_size;
 		UInt8 m_message_type;
-		UInt16 m_task_id;
+		UInt8 m_task_id[sizeof(UInt16)];
 		UInt8 m_data[MAX_DATA_SIZE];
 	};
 

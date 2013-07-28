@@ -20,12 +20,13 @@ namespace msg
 	public:
 
 		/// The message type for instances of this class
-		enum { MSGID = RemoconMessageTypes::MSGID_SET_WHEEL_DRIVE };
+		enum { MSGID = RobocomMessageTypes::MSGID_WHEEL_DRIVE };
 
 		/**
 		 * Constructor for a delayed-execution message
 		 */
 		SetWheelDriveRequest (
+			UInt16 task_id,
 			UInt32 current_millis,
 			UInt8 motor_1_direction,
 			UInt8 motor_1_signal,
@@ -37,6 +38,7 @@ namespace msg
 		 * Constructor for an immediate-execution message
 		 */
 		SetWheelDriveRequest (
+			UInt16 task_id,
 			UInt8 motor_1_direction,
 			UInt8 motor_1_signal,
 			UInt8 motor_2_direction,
@@ -75,6 +77,15 @@ namespace msg
 		 *    is neither 0 nor 1
 		 */
 		MessageStatus validate () const throw ();
+
+  		/**
+		 * Returns the ID of the task associated with this message, or
+		 * zero if there is no such task
+		 */
+		UInt16 getTaskId () const throw ()
+		{
+			return m_msg.getTaskId();
+		}
 
 		/**
 		 * Returns the direction in which the motor signal is applied

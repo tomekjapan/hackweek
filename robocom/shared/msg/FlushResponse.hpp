@@ -26,6 +26,7 @@ namespace msg
 		 * Constructor
 		 */
 		FlushResponse (
+			UInt16 task_id,
 			UInt32 current_millis,
 			UInt8 min_free_slots,
 			UInt8 free_slots,
@@ -70,6 +71,15 @@ namespace msg
 		 *    queue is larger than the maximum size
 		 */
 		MessageStatus validate () const throw ();
+
+  		/**
+		 * Returns the ID of the task associated with this message, or
+		 * zero if there is no such task
+		 */
+		UInt16 getTaskId () const throw ()
+		{
+			return m_msg.getTaskId();
+		}
 
 		/**
 		 * Returns the minimum number of free message slots since
