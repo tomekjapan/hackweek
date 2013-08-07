@@ -12,9 +12,17 @@ using namespace robocom::shared;
 using namespace robocom::shared::msg;
 using namespace robocom::client;
 
+#define USE_XBEE 1
+
 SUITE(SerialPortTester)
 {
-	SerialPort sp( "/dev/ttyACM0", BAUD_RATE_115200 );
+#if defined(USE_XBEE)
+
+	SerialPort sp( "/dev/ttyUSB0", BAUD_RATE_57600 );
+
+#else
+
+	SerialPort sp( "/dev/ttyACM0", BAUD_RATE_57600 );
 
 	struct Sleeper
 	{
@@ -28,6 +36,7 @@ SUITE(SerialPortTester)
 	}
 	wait_for_arduino_reset;
 
+#endif
 
 	TEST(GetSetBaudRate)
 	{
@@ -45,7 +54,7 @@ SUITE(SerialPortTester)
 		MessageIO io( sp );
 
 		// Noop requests should just get ignored
-		for ( int i = 0; i < 100; i++ ) {
+		for ( int i = 0; i < 10; i++ ) {
 			io.write( NoopRequest(i).asMessage() );
 		}
 	}

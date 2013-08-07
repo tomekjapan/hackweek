@@ -239,12 +239,17 @@ namespace shared
 		// is in the valid range, and that there are enough data in the
 		// output buffer to read the whole message.
 
-		m_data_size = stream.read() - HEADER_SIZE;
+		const UInt8 data_size = stream.read() - HEADER_SIZE;
 		m_message_type = stream.read();
 		stream.readBytes( (char*) m_task_id, sizeof(m_task_id) );
 
-		if ( m_data_size > 0 ) {
-			stream.readBytes( (char*) m_data, m_data_size );
+		if ( data_size > 0 ) {
+			stream.readBytes( (char*) m_data, data_size );
+		}
+
+		m_data_size = data_size;
+		if ( ! isImmediate() ) {
+			m_data_size -= 4u;
 		}
 	}
 
@@ -252,10 +257,15 @@ namespace shared
 	void
 	Message::serializeTo (StreamIO& stream) const
 	{
-		stream.write( m_data_size + HEADER_SIZE );
+		UInt8 data_size = m_data_size;
+		if ( ! isImmediate() ) {
+			data_size += 4u;
+		}
+
+		stream.write( data_size + HEADER_SIZE );
 		stream.write( m_message_type );
 		stream.write( m_task_id, sizeof(m_task_id) );
-		stream.write( m_data, m_data_size );
+		stream.write( m_data, data_size );
 	}
 
 } }

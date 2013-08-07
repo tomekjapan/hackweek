@@ -9,6 +9,7 @@ add_library(robocom_shared
   msg/impl/SetWheelDriveRequest.cpp
   msg/impl/WheelDriveChangedNotice.cpp
   msg/impl/EncoderReadingRequest.cpp
+  msg/impl/EncoderReadingNotice.cpp
   )
 
 ##########################################################
