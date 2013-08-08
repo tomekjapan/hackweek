@@ -384,6 +384,15 @@ class Client:
             msg = self.io.read()
         print msg
 
+def testLoop (client, timed):
+    try:
+        start = time.time()
+        while not timed or time.time() - start < 3.0:
+            time.sleep(0.1)
+            client.flush()
+    except KeyboardInterrupt:
+        print "Interrupted"
+
 def spinMe ():
 
     client = Client()
@@ -394,22 +403,14 @@ def spinMe ():
     client.reset()
     client.flush()
 
-    #client.subscribeEncoder(0)
-    #client.subscribeEncoder(1)
-    client.subscribeGyro(100)
+    client.subscribeEncoder(0)
+    client.subscribeEncoder(1)
 
-    #client.setDrive( 0, 100, 0, 100 )
+    client.setDrive( 0, 100, 0, 100 )
     client.flush()
 
-    TIMED = False
-    try:
-        start = time.time()
-        while not TIMED or time.time() - start < 3.0:
-            time.sleep(0.1)
-            client.flush()
-    except KeyboardInterrupt:
-        print "Interrupted"
-
+    testLoop(client, True)
+    
     client.reset()
     client.flush()
 
@@ -427,6 +428,23 @@ def moveMyServo ():
     client.reset()
     client.flush()
 
-if __name__ == '__main__':
-    moveMyServo()
+def printGyro ():
+    client = Client()
 
+    # An "echo" message
+    client.echo()
+
+    client.reset()
+    client.flush()
+
+    client.subscribeGyro(100)
+
+    client.flush()
+
+    testLoop(client, False)
+
+    client.reset()
+    client.flush()
+
+if __name__ == '__main__':
+    printGyro()
