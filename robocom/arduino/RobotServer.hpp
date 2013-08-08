@@ -119,12 +119,20 @@ private:
 		const robocom::shared::msg::EncoderReadingRequest& req
 	) throw ();
 
+	void _processMessage (
+		const robocom::shared::msg::GyroReadingRequest& req
+	) throw ();
+
 	void _notifyWheelDriveChanged (
 		const robocom::shared::Message& msg
 	) throw ();
 
 	void _notifyEncoderReading (
 		const Encoder& encoder
+	) throw ();
+
+	void _notifyGyroReading (
+		const Gyro& gyro
 	) throw ();
 
 	void _setWheelDrive (
@@ -138,7 +146,10 @@ private:
 	Motor m_motor_2;
 	Encoder m_encoder_1;
 	Encoder m_encoder_2;
-    Gyro m_gyro;
+
+	static const unsigned long GYRO_OUTPUT_PERIOD_MICROS = 100000;
+	Gyro m_gyro;
+	unsigned long m_last_gyro_output_micros;
 
     LogoTurn m_turn;
 };

@@ -1,6 +1,8 @@
 // External component includes
 #include "robocom/shared/msg/EncoderReadingNotice.hpp"
 #include "robocom/shared/msg/EncoderReadingRequest.hpp"
+#include "robocom/shared/msg/GyroReadingNotice.hpp"
+#include "robocom/shared/msg/GyroReadingRequest.hpp"
 #include "robocom/shared/msg/SetWheelDriveRequest.hpp"
 #include "robocom/shared/msg/SimpleMessage.hxx"
 #include "robocom/shared/msg/WheelDriveChangedNotice.hpp"
@@ -19,7 +21,8 @@ RobotServer::RobotServer (StreamIO& stream) throw ()
 	, m_motor_2( MOTOR_2_DIR_PIN, MOTOR_2_SIGNAL_PIN )
 	, m_encoder_1( ENCODER_1_PIN )
 	, m_encoder_2( ENCODER_2_PIN )
-    , m_gyro()
+	, m_gyro()
+	, m_last_gyro_output_micros(0)
     , m_turn()
 {
 }
@@ -34,7 +37,7 @@ RobotServer::setup () throw ()
 	m_encoder_1.setup();
 	m_encoder_2.setup();
 
-    m_gyro.initialize(); // TODO: Error check?
+	m_gyro.initialize(); // TODO: Error check?
 }
 
 
@@ -43,6 +46,7 @@ RobotServer::handleReset (const ResetRequest& req) throw ()
 {
 	m_encoder_1.clearSubscriber();
 	m_encoder_2.clearSubscriber();
+	m_gyro.clearSubscriber();
 
 	_setWheelDrive( 0, 0, 0, 0 );
 	_notifyWheelDriveChanged( req.asMessage() );
@@ -60,6 +64,9 @@ RobotServer::handleMessage (const Message& msg) throw ()
 	case EncoderReadingRequest::MSGID:
 		_processMessage( EncoderReadingRequest( msg ) );
 		break;
+	case GyroReadingRequest::MSGID:
+		_processMessage( GyroReadingRequest( msg ) );
+		break;
 	}
 }
 
@@ -75,10 +82,13 @@ RobotServer::handleStateUpdate () throw ()
 		_notifyEncoderReading( m_encoder_2 );
 	}
 
-    m_gyro.awaitFirstReading();
-    if (m_gyro.updateReading()) {
-        // TODO: Report gyro readings.  Need rate-limiting?
-    }
+	m_gyro.awaitFirstReading();
+	if (m_gyro.updateReading()) {
+		if (m_gyro.shouldReport()) {
+			_notifyGyroReading( m_gyro );
+			m_gyro.setReported();
+		}
+	}
 }
 
 
@@ -107,7 +117,7 @@ RobotServer::_processMessage (const EncoderReadingRequest& req)
 {
 	if ( STATUS_OK != req.validate() )
 	{
-		NCR_UNEXPECTED( "invalid SetWheelDriveRequest");
+		NCR_UNEXPECTED( "invalid EncoderReadingRequest");
 		return;
 	}
 
@@ -120,6 +130,24 @@ RobotServer::_processMessage (const EncoderReadingRequest& req)
 	}
 	else {
 		encoder.setSubscriber( req.getTaskId() );
+	}
+}
+
+
+void
+RobotServer::_processMessage (const GyroReadingRequest& req)
+{
+	if ( STATUS_OK != req.validate() )
+	{
+		NCR_UNEXPECTED( "invalid GyroReadingRequest");
+		return;
+	}
+
+	if ( ! req.getIsSubscribe() ) {
+		m_gyro.clearSubscriber();
+	}
+	else {
+		m_gyro.setSubscriber( req.getTaskId(), req.getMinDelayMillis() );
 	}
 }
 
@@ -152,6 +180,25 @@ RobotServer::_notifyEncoderReading (const Encoder& encoder) throw ()
 			encoder.getId(),
 			encoder.getTotal(),
 			encoder.getMicros()
+		).asMessage()
+	);
+}
+
+
+void
+RobotServer::_notifyGyroReading (const Gyro& gyro) throw ()
+{
+	// We only get here if the client subscribed to the gyro readings
+
+	const Gyro::Reading& reading = gyro.getLatestReading();
+	addResponse(
+		GyroReadingNotice(
+			gyro.getSubscriberTaskId(),
+			reading.micros / 1000,
+			reading.getYawDegrees(),
+			reading.getPitchDegrees(),
+			reading.getRollDegrees(),
+			reading.micros
 		).asMessage()
 	);
 }

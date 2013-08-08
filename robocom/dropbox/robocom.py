@@ -35,7 +35,7 @@ class SerialStream:
     def readBytes (self, size):
         bs = bytearray()
         if size == 0:
-            return b
+            return bs
         if self.peekedByte >= 0:
             bs.append( self.peekedByte )
             self.peekedByte = -1
@@ -50,7 +50,7 @@ class SerialStream:
         self.port.write( bytearray(b) )
 
     def writeBytes (self, bs):
-        self.port.write(b)
+        self.port.write(bs)
 
 # Message types
 MSGID_NOOP = 0
@@ -59,6 +59,7 @@ MSGID_RESET = 2
 MSGID_FLUSH = 3
 MSGID_WHEEL_DRIVE = 4
 MSGID_ENCODER_READING = 5
+MSGID_GYRO_READING = 6
 
 
 MSG_START = ord('>')
@@ -72,6 +73,15 @@ def serializeInt2 (v):
 
 def deserializeInt2 (bs, offset):
     return bs[offset] | (bs[offset+1] << 8)
+
+def deserializeAngle2 (bs, offset):
+    twos_complement = deserializeInt2(bs, offset)
+    signed = twos_complement if twos_complement&0x8000 == 0 else twos_complement-0x10000
+    angle = signed / 100.0
+    return angle
+
+def serializeInt4 (v):
+    return [ v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff ]
 
 def deserializeInt4 (bs, offset):
     return bs[offset] | (bs[offset+1] << 8) | \
@@ -136,6 +146,9 @@ class SetWheelDriveRequest:
         bs.extend(serializeInt2(self.taskId))
         bs.extend([self.m1dir, self.m1sig, self.m2dir, self.m2sig])
         return bs
+    def __str__ (self):
+        return "SetWheelDriveRequest(taskId=%d, isImmediate=%d, m1dir=%s, m1sig=%s, m2dir=%s, m2sig=%s)" \
+          % (self.taskId, self.isImmediate, self.m1dir, self.m1sig, self.m2dir, self.m2sig)
 
 class EncoderReadingRequest:
     def __init__ (self, encoderId, isSubscribe):
@@ -147,6 +160,24 @@ class EncoderReadingRequest:
         bs.extend(serializeInt2(self.taskId))
         bs.extend([self.encoderId, 1 if self.isSubscribe else 0])
         return bs
+    def __str__ (self):
+        return "EncoderReadingRequest(taskId=%d, encoderId=%d, isSubscribe=%s)" \
+          % (self.taskId, self.encoderId, self.isSubscribe)
+
+class GyroReadingRequest:
+    def __init__ (self, isSubscribe, minDelayMillis):
+        self.taskId = nextTaskId()
+        self.isSubscribe = isSubscribe
+        self.minDelayMillis = minDelayMillis
+    def serialize (self):
+        bs = [9, MSGID_GYRO_READING | 0x80]
+        bs.extend(serializeInt2(self.taskId))
+        bs.extend([1 if self.isSubscribe else 0])
+        bs.extend(serializeInt4(self.minDelayMillis))
+        return bs
+    def __str__ (self):
+        return "GyroReadingRequest(taskId=%d, isSubscribe=%s, minDelayMillis=%d)" \
+          % (self.taskId, self.isSubscribe, self.minDelayMillis)
 
 class Response:
     def __init__ (self, taskId, isImmediate, data):
@@ -205,6 +236,20 @@ class EncoderReadingNotice (Response):
             % (self.taskId, self.isImmediate, self.millis,
                self.encoderId, self.tickIndex, self.micros)
 
+class GyroReadingNotice (Response):
+    def __init__(self, taskId, isImmediate, data):
+        Response.__init__(self, taskId, isImmediate, data)
+        self.yawDegrees = deserializeAngle2(data, self.offset+0)
+        self.pitchDegrees = deserializeAngle2(data, self.offset+2)
+        self.rollDegrees = deserializeAngle2(data, self.offset+4)
+        self.micros = deserializeInt4(data, self.offset+6)
+    def __str__ (self):
+        return "GyroReadingNotice(taskId=%d, isImmediate=%d, millis=%d, " \
+            "yawDegrees=%s, pitchDegrees=%s, rollDegrees=%s, micros=%d" \
+            % (self.taskId, self.isImmediate, self.millis,
+               self.yawDegrees, self.pitchDegrees, self.rollDegrees,
+               self.micros)
+
 IOS_NEED_MESSAGE_START = 0
 IOS_NEED_DATA = 1
 IOS_HAVE_DATA = 2
@@ -226,6 +271,7 @@ class MessageIO:
 
     # Writes a message
     def write (self, msg):
+        print "Send %s" % (msg,)
         self.stream.write(
             bytearray([MSG_START] + msg.serialize() + [MSG_END]) )
 
@@ -272,6 +318,8 @@ class MessageIO:
             return WheelDriveChangedNotice(task_id, isImmediate, data)
         if MSGID_ENCODER_READING == msg_type:
             return EncoderReadingNotice(task_id, isImmediate, data)
+        if MSGID_GYRO_READING == msg_type:
+            return GyroReadingNotice(task_id, isImmediate, data)
 
 class Client:
 
@@ -279,11 +327,17 @@ class Client:
         self.ss = SerialStream()
         self.io = MessageIO(self.ss)
 
-    def subscribe (self, id):
+    def subscribeEncoder (self, id):
         self.io.write( EncoderReadingRequest(id, True) )
 
-    def unsubscribe (self, id):
+    def unsubscribeEncoder (self, id):
         self.io.write( EncoderReadingRequest(id, False) )
+
+    def subscribeGyro (self, minDelayMillis):
+        self.io.write( GyroReadingRequest(True, minDelayMillis) )
+
+    def unsubscribeGyro (self):
+        self.io.write( GyroReadingRequest(False, 0) )
 
     def setDrive (self, m1dir, m1sig, m2dir, m2sig):
         self.io.write( SetWheelDriveRequest( m1dir, m1sig, m2dir, m2sig ) )
@@ -325,16 +379,21 @@ if __name__ == '__main__':
     client.reset()
     client.flush()
 
-    client.subscribe(0)
-    client.subscribe(1)
+    #client.subscribeEncoder(0)
+    #client.subscribeEncoder(1)
+    client.subscribeGyro(100)
 
-    client.setDrive( 0, 100, 0, 100 )
+    #client.setDrive( 0, 100, 0, 100 )
     client.flush()
 
-    start = time.time()
-    while time.time() - start < 3.0:
-        time.sleep(0.4)
-        client.flush()
+    TIMED = False
+    try:
+        start = time.time()
+        while not TIMED or time.time() - start < 3.0:
+            time.sleep(0.1)
+            client.flush()
+    except KeyboardInterrupt:
+        print "Interrupted"
 
     client.reset()
     client.flush()

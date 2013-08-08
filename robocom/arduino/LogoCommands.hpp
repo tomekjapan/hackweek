@@ -41,7 +41,9 @@ public:
   }
   
   /**
-   * Returns the current turn angle.
+   * Returns the current turn angle, in radians.
+   * The range is dependent on the turn direction, either
+   * -pi/2 <= angle <= 3pi/2 or -3pi/2 <= angle <= pi/2.
    */
   float getAngle() {
     if (!m_p_gyro) {
@@ -55,10 +57,11 @@ public:
     }
     return angle;
   }
-    
+
+private:
+
   float maxAngle() { return m_target_angle >= 0 ? (3.0f*M_PI/2.0f) : (M_PI/2.0f); }
   float minAngle() { return m_target_angle >= 0 ? (-M_PI/2.0f) : (-3.0f*M_PI/2.0f); }
-private:
   
   LogoTurn(const Gyro& gyro, float target_angle)
     : m_p_gyro(&gyro)

@@ -18,6 +18,8 @@ namespace msg
 
 	class EncoderReadingNotice;
 	class EncoderReadingRequest;
+	class GyroReadingNotice;
+	class GyroReadingRequest;
 	class FlushResponse;
 	class SetWheelDriveRequest;
 	class WheelDriveChangedNotice;
