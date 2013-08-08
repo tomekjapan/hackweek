@@ -19,6 +19,8 @@ RobotServer::RobotServer (StreamIO& stream) throw ()
 	, m_motor_2( MOTOR_2_DIR_PIN, MOTOR_2_SIGNAL_PIN )
 	, m_encoder_1( ENCODER_1_PIN )
 	, m_encoder_2( ENCODER_2_PIN )
+    , m_gyro()
+    , m_turn()
 {
 }
 
@@ -31,6 +33,8 @@ RobotServer::setup () throw ()
 
 	m_encoder_1.setup();
 	m_encoder_2.setup();
+
+    m_gyro.initialize(); // TODO: Error check?
 }
 
 
@@ -70,6 +74,11 @@ RobotServer::handleStateUpdate () throw ()
 	if ( m_encoder_2.update() ) {
 		_notifyEncoderReading( m_encoder_2 );
 	}
+
+    m_gyro.awaitFirstReading();
+    if (m_gyro.updateReading()) {
+        // TODO: Report gyro readings.  Need rate-limiting?
+    }
 }
 
 
