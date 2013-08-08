@@ -15,6 +15,3 @@ add_library(robocom_shared
 ##########################################################
 # Tests
 
-add_subdirectory(test)
-
-add_test(NAME RoboComSharedTester COMMAND RoboComSharedTester)
