@@ -2,13 +2,13 @@ import serial, time
 
 class SerialStream:
     def __init__ (self):
-        self.device = '/dev/ttyUSB0'
+        self.device = '/dev/tty.usbmodem1421'
         self.port = serial.Serial(
             port=self.device,
             baudrate=57600,
             timeout=0)
         # Must sleep so that the board can reset
-        if self.device.find('ACM') > 0:
+        if not self.device.find('USB') > 0:
             print "Waiting for 2 seconds..."
             time.sleep(2)
             print "done"
