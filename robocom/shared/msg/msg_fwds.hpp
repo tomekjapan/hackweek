@@ -23,6 +23,12 @@ namespace msg
 	class SetServoAngleRequest;
 	class WheelDriveChangedNotice;
 
+	// Commands for LOGO turtle emulation
+	class LogoTurnRequest;
+	class LogoMoveRequest;
+	class LogoPenRequest;
+	class LogoCompleteNotice;
+
 	using namespace common;
 
 } } }

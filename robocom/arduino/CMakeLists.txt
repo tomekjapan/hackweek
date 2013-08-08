@@ -40,6 +40,9 @@ set(robocom_arduino_SRCS
   impl/Motor.cpp
   impl/Gyro.cpp
   impl/Servo.cpp
+  impl/LogoTurn.cpp
+  impl/LogoMove.cpp
+  impl/LogoPen.cpp
   impl/main.cpp
   ${SHARED_SOURCE_FILES}
   ${SHARED_MSG_SOURCE_FILES}

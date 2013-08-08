@@ -113,6 +113,26 @@ private:
 	RobotServer (const RobotServer&);
 	void operator= (const RobotServer&);
 
+	bool _hasLogoCommand () const throw ()
+	{
+		return 0 != m_p_logo_command;
+	}
+
+	LogoCommand& _getLogoCommand () throw ()
+	{
+		return * m_p_logo_command;
+	}
+
+	void _clearLogoCommand () throw ()
+	{
+		m_p_logo_command = 0;
+	}
+
+	void _setLogoCommand (LogoCommand& logo_command) throw ()
+	{
+		m_p_logo_command = & logo_command;
+	}
+
 	void _processMessage (
 		const robocom::shared::msg::SetWheelDriveRequest& req
 	) throw ();
@@ -125,12 +145,29 @@ private:
 		const robocom::shared::msg::EncoderReadingRequest& req
 	) throw ();
 
+	void _processMessage (
+		const robocom::shared::msg::LogoTurnRequest& req
+	) throw ();
+
+	void _processMessage (
+		const robocom::shared::msg::LogoMoveRequest& req
+	) throw ();
+
+	void _processMessage (
+		const robocom::shared::msg::LogoPenRequest& req
+	) throw ();
+
 	void _notifyWheelDriveChanged (
-		const robocom::shared::Message& msg
+		UInt16 task_id
 	) throw ();
 
 	void _notifyEncoderReading (
 		const Encoder& encoder
+	) throw ();
+
+	void _notifyLogoComplete (
+		UInt16 task_id,
+		UInt8 completion_status
 	) throw ();
 
 	void _setWheelDrive (
@@ -152,7 +189,10 @@ private:
     Gyro m_gyro;
 	Servo m_servo;
 
-    LogoTurn m_turn;
+	LogoCommand* m_p_logo_command;
+    LogoTurn m_logo_turn;
+	LogoMove m_logo_move;
+	LogoPen m_logo_pen;
 };
 
 
