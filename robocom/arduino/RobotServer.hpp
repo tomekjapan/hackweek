@@ -4,6 +4,8 @@
 #include "robocom/shared/Server.hpp"
 #include "Motor.hpp"
 #include "Encoder.hpp"
+#include "Gyro.hpp"
+#include "LogoCommands.hpp"
 
 /**
  * This class defines a robocom server for a particular 2WD mobile platform
@@ -136,6 +138,9 @@ private:
 	Motor m_motor_2;
 	Encoder m_encoder_1;
 	Encoder m_encoder_2;
+    Gyro m_gyro;
+
+    LogoTurn m_turn;
 };
 
 
