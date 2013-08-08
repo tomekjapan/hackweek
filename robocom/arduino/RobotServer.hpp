@@ -5,6 +5,7 @@
 #include "Motor.hpp"
 #include "Encoder.hpp"
 #include "Gyro.hpp"
+#include "Servo.hpp"
 #include "LogoCommands.hpp"
 
 /**
@@ -32,7 +33,8 @@ public:
 		MOTOR_2_DIR_PIN = 7,
 		MOTOR_2_SIGNAL_PIN = 6,
 		ENCODER_1_PIN = 2,
-		ENCODER_2_PIN = 3
+		ENCODER_2_PIN = 3,
+		SERVO_PIN = 11
 	};
 
 	///@}
@@ -116,6 +118,10 @@ private:
 	) throw ();
 
 	void _processMessage (
+		const robocom::shared::msg::SetServoAngleRequest& req
+	) throw ();
+
+	void _processMessage (
 		const robocom::shared::msg::EncoderReadingRequest& req
 	) throw ();
 
@@ -134,11 +140,17 @@ private:
 		UInt8 motor_2_signal
 	) throw ();
 
+	void _setServoAngle (
+		UInt8 servo_id,
+		UInt8 angle
+	) throw ();
+
 	Motor m_motor_1;
 	Motor m_motor_2;
 	Encoder m_encoder_1;
 	Encoder m_encoder_2;
     Gyro m_gyro;
+	Servo m_servo;
 
     LogoTurn m_turn;
 };

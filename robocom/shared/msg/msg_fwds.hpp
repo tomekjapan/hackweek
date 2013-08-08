@@ -20,6 +20,7 @@ namespace msg
 	class EncoderReadingRequest;
 	class FlushResponse;
 	class SetWheelDriveRequest;
+	class SetServoAngleRequest;
 	class WheelDriveChangedNotice;
 
 	using namespace common;

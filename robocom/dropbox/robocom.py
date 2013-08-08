@@ -59,6 +59,7 @@ MSGID_RESET = 2
 MSGID_FLUSH = 3
 MSGID_WHEEL_DRIVE = 4
 MSGID_ENCODER_READING = 5
+MSGID_SERVO_ANGLE = 6
 
 
 MSG_START = ord('>')
@@ -135,6 +136,17 @@ class SetWheelDriveRequest:
         bs = [8, MSGID_WHEEL_DRIVE | 0x80]
         bs.extend(serializeInt2(self.taskId))
         bs.extend([self.m1dir, self.m1sig, self.m2dir, self.m2sig])
+        return bs
+
+class SetServoAngleRequest:
+    def __init__ (self, servoId, angle):
+        self.taskId = nextTaskId()
+        self.servoId = servoId
+        self.angle = angle
+    def serialize (self):
+        bs = [6, MSGID_SERVO_ANGLE | 0x80]
+        bs.extend(serializeInt2(self.taskId))
+        bs.extend([self.servoId, self.angle])
         return bs
 
 class EncoderReadingRequest:
@@ -288,6 +300,10 @@ class Client:
     def setDrive (self, m1dir, m1sig, m2dir, m2sig):
         self.io.write( SetWheelDriveRequest( m1dir, m1sig, m2dir, m2sig ) )
 
+    def setServoAngle (self, angle):
+        print "Angle ->", angle
+        self.io.write( SetServoAngleRequest( 0, angle ) )
+
     def reset (self):
         self.io.write( ResetRequest() )
 
@@ -314,8 +330,7 @@ class Client:
             msg = self.io.read()
         print msg
 
-
-if __name__ == '__main__':
+def spinMe ():
 
     client = Client()
 
@@ -338,3 +353,21 @@ if __name__ == '__main__':
 
     client.reset()
     client.flush()
+
+def moveMyServo ():
+
+    client = Client()
+    client.echo()
+    client.reset()
+    client.flush()
+
+    for i in range(30,181,30):
+        client.setServoAngle(i)
+        time.sleep(0.5)
+
+    client.reset()
+    client.flush()
+
+if __name__ == '__main__':
+    moveMyServo()
+
