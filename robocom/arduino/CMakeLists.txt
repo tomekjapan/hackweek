@@ -15,7 +15,7 @@ set(WORKSPACE_ROOT "${PROJECT_SOURCE_DIR}/../..")
 include_directories("${WORKSPACE_ROOT}")
 include_directories("${PROJECT_SOURCE_DIR}/libraries/Wire")
 include_directories("${PROJECT_SOURCE_DIR}/libraries/Wire/utility")
-include_directories("${PROJECT_SOURCE_DIR}/libraries/I2CDev")
+include_directories("${PROJECT_SOURCE_DIR}/libraries/I2Cdev")
 include_directories("${PROJECT_SOURCE_DIR}/libraries/MPU6050")
 
 # Set location of files shared between arduino and the client
@@ -26,7 +26,7 @@ file(GLOB SHARED_MSG_SOURCE_FILES "${SHARED_SOURCE_DIR}/msg/impl/*.cpp")
 # Set location of library sources
 file(GLOB LIB_WIRE_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/Wire/*.cpp")
 file(GLOB LIB_WIRE_C_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/Wire/*.c")
-file(GLOB LIB_I2CDEV_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/I2CDev/*.cpp")
+file(GLOB LIB_I2CDEV_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/I2Cdev/*.cpp")
 file(GLOB LIB_MPU6050_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/MPU6050/*.cpp")
 
 set(robocom_arduino_BOARD uno)
@@ -39,6 +39,7 @@ set(robocom_arduino_SRCS
   impl/Encoder.cpp
   impl/Motor.cpp
   impl/Gyro.cpp
+  impl/Servo.cpp
   impl/main.cpp
   ${SHARED_SOURCE_FILES}
   ${SHARED_MSG_SOURCE_FILES}

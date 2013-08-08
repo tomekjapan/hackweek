@@ -33,6 +33,7 @@ namespace msg
 			MSGID_WHEEL_DRIVE = CommonMessageTypes::LAST,
 			MSGID_ENCODER_READING,
 			MSGID_GYRO_READING,
+			MSGID_SERVO_ANGLE,
 			LAST
 		};
 	};

@@ -7,3 +7,4 @@ install_manifest.txt
 3rdparty/
 TAGS
 build/
+*.pyc

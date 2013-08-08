@@ -4,6 +4,7 @@
 #include "robocom/shared/msg/GyroReadingNotice.hpp"
 #include "robocom/shared/msg/GyroReadingRequest.hpp"
 #include "robocom/shared/msg/SetWheelDriveRequest.hpp"
+#include "robocom/shared/msg/SetServoAngleRequest.hpp"
 #include "robocom/shared/msg/SimpleMessage.hxx"
 #include "robocom/shared/msg/WheelDriveChangedNotice.hpp"
 
@@ -22,7 +23,7 @@ RobotServer::RobotServer (StreamIO& stream) throw ()
 	, m_encoder_1( ENCODER_1_PIN )
 	, m_encoder_2( ENCODER_2_PIN )
 	, m_gyro()
-	, m_last_gyro_output_micros(0)
+	, m_servo( SERVO_PIN, 90 /*base angle*/ )
     , m_turn()
 {
 }
@@ -37,6 +38,8 @@ RobotServer::setup () throw ()
 	m_encoder_1.setup();
 	m_encoder_2.setup();
 
+	m_servo.setup();
+
 	m_gyro.initialize(); // TODO: Error check?
 }
 
@@ -47,6 +50,8 @@ RobotServer::handleReset (const ResetRequest& req) throw ()
 	m_encoder_1.clearSubscriber();
 	m_encoder_2.clearSubscriber();
 	m_gyro.clearSubscriber();
+
+	m_servo.setBase();
 
 	_setWheelDrive( 0, 0, 0, 0 );
 	_notifyWheelDriveChanged( req.asMessage() );
@@ -60,6 +65,9 @@ RobotServer::handleMessage (const Message& msg) throw ()
 	{
 	case SetWheelDriveRequest::MSGID:
 		_processMessage( SetWheelDriveRequest( msg ) );
+		break;
+	case SetServoAngleRequest::MSGID:
+		_processMessage( SetServoAngleRequest( msg ) );
 		break;
 	case EncoderReadingRequest::MSGID:
 		_processMessage( EncoderReadingRequest( msg ) );
@@ -109,6 +117,19 @@ RobotServer::_processMessage (const SetWheelDriveRequest& req) throw ()
 	);
 
 	_notifyWheelDriveChanged( req.asMessage() );
+}
+
+
+void
+RobotServer::_processMessage (const SetServoAngleRequest& req) throw ()
+{
+	if ( STATUS_OK != req.validate() )
+	{
+		NCR_UNEXPECTED( "invalid SetServoAngleRequest");
+		return;
+	}
+
+	_setServoAngle( req.getServoId(), req.getAngle() );
 }
 
 
@@ -216,4 +237,16 @@ RobotServer::_setWheelDrive (
 	m_motor_1.setSignal( motor_1_signal );
 	m_motor_2.setDirection( motor_2_direction );
 	m_motor_2.setSignal( motor_2_signal );
+}
+
+
+void
+RobotServer::_setServoAngle (
+	UInt8 servo_id,
+	UInt8 angle
+) throw ()
+{
+	if ( servo_id == 0 ) {
+		m_servo.setAngle( angle );
+	}
 }

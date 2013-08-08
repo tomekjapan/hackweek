@@ -150,7 +150,7 @@ Gyro::Reading::Reading(const Gyro::Reading& other) throw ()
 	, ypr()
 	, millis(other.millis)
 	, micros(other.micros) {
-    ::memcpy(&ypr, &other.ypr, sizeof(ypr));
+	::memcpy(&ypr, &other.ypr, sizeof(ypr));
 }
 
 

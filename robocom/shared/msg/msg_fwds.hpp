@@ -22,6 +22,7 @@ namespace msg
 	class GyroReadingRequest;
 	class FlushResponse;
 	class SetWheelDriveRequest;
+	class SetServoAngleRequest;
 	class WheelDriveChangedNotice;
 
 	using namespace common;
