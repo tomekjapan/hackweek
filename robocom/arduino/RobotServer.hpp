@@ -157,6 +157,10 @@ private:
 		const robocom::shared::msg::LogoPenRequest& req
 	) throw ();
 
+	void _processMessage (
+		const robocom::shared::msg::GyroReadingRequest& req
+	) throw ();
+
 	void _notifyWheelDriveChanged (
 		UInt16 task_id
 	) throw ();
@@ -165,9 +169,14 @@ private:
 		const Encoder& encoder
 	) throw ();
 
+
 	void _notifyLogoComplete (
 		UInt16 task_id,
 		UInt8 completion_status
+	) throw ();
+
+	void _notifyGyroReading (
+		const Gyro& gyro
 	) throw ();
 
 	void _setWheelDrive (
@@ -186,7 +195,9 @@ private:
 	Motor m_motor_2;
 	Encoder m_encoder_1;
 	Encoder m_encoder_2;
-    Gyro m_gyro;
+
+	Gyro m_gyro;
+
 	Servo m_servo;
 
 	LogoCommand* m_p_logo_command;
