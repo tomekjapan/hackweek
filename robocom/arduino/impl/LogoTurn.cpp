@@ -6,7 +6,7 @@
 #include "../LogoCommands.hpp"
 
 LogoTurn::LogoTurn (
-	const Gyro& gyro,
+	Gyro& gyro,
 	Motor& motor_1,
 	Motor& motor_2
 ) throw ()
@@ -16,13 +16,18 @@ LogoTurn::LogoTurn (
 	, m_start_yaw(0.0f)
 	, m_target_angle(0.0f)
 	, m_motor_speed( 60 )	// TODO: choose something reasonable
+	, m_start_millis( 0 )
 	, m_is_active( false )
+	, m_is_started( false )
 {}
 
 
 bool
 LogoTurn::isDone () const throw ()
 {
+	if (! m_is_started) {
+		return false;
+	}
 	return (m_target_angle >= 0)
 		? (getAngle() >= m_target_angle)
 		: (getAngle() <= m_target_angle);
@@ -50,10 +55,11 @@ LogoTurn::start (UInt16 task_id, float target_angle) throw ()
 	}
 
 	m_is_active = true;
-	m_start_yaw = m_p_gyro->getLatestReading().ypr[0];
-	m_target_angle = target_angle;
+	m_is_started = false;
 	setTaskId( task_id );
-	_turnMotorsOn( target_angle > 0 ? 0 : 1 );
+	m_target_angle = target_angle;
+	m_start_millis = ::millis();
+	_enableGyro();
 	
 	return true;
 }
@@ -62,10 +68,15 @@ LogoTurn::start (UInt16 task_id, float target_angle) throw ()
 bool
 LogoTurn::update () throw ()
 {
-	if ( m_is_active && isDone() )
+	if ( m_is_active )
 	{
-		_turnMotorsOff();
-		m_is_active = false;
+		_delayedStartIfNecessary();
+
+		if ( isDone() ) {
+			_disableGyro();
+			_turnMotorsOff();
+			m_is_active = false;
+		}
 	}
 
 	return ! m_is_active;
@@ -83,6 +94,17 @@ float
 LogoTurn::_minAngle() const throw ()
 {
 	return m_target_angle >= 0 ? (-M_PI/2.0f) : (-3.0f*M_PI/2.0f);
+}
+
+
+void
+LogoTurn::_delayedStartIfNecessary () throw ()
+{
+	if (m_start_millis != 0 && m_p_gyro->getLatestReading().millis >= m_start_millis) {
+		m_start_yaw = m_p_gyro->getLatestReading().getYawDegrees();
+		_turnMotorsOn( m_target_angle > 0 ? 0 : 1 );
+		m_start_millis = 0;
+	}
 }
 
 
@@ -105,3 +127,15 @@ LogoTurn::_turnMotorsOff () throw ()
 }
 
 
+void
+LogoTurn::_enableGyro () throw ()
+{
+	m_p_gyro->setUpdateDelay(Gyro::SAFE_UPDATE_DELAY_MILLIS);
+}
+
+
+void
+LogoTurn::_disableGyro () throw ()
+{
+	m_p_gyro->disableUpdate();
+}

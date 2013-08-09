@@ -1,11 +1,11 @@
 // Component includes
-#include "../Servo.hpp"
+#include "../ServoCtl.hpp"
 
 // Module include
 #include "../LogoCommands.hpp"
 
 LogoPen::LogoPen (
-	Servo& servo
+	ServoCtl& servo
 ) throw ()
 	: m_p_servo( &servo )
 	, m_up_angle( 45 )

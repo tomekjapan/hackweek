@@ -55,7 +55,8 @@ LogoMove::start (
 	}
 
 	m_is_active = true;
-	m_start_angle = m_p_gyro->getLatestReading().ypr[0];
+	// TODO: Needs delayed start to enable gyro to make this useful:
+	// m_start_angle = m_p_gyro->getLatestReading().getYawDegrees();
 	m_start_tick_1 = m_p_encoder_1->getTotal();
 	m_start_tick_2 = m_p_encoder_2->getTotal();
 	m_target_distance = distance_ticks;

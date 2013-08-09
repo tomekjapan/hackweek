@@ -7,7 +7,7 @@ class LogoCommand;
 class LogoTurn;
 class Motor;
 class RobotServer;
-class Servo;
+class ServoCtl;
 
 using namespace common;
 

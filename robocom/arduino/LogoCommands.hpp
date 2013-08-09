@@ -58,13 +58,15 @@ private:
 class LogoTurn
 	: public LogoCommand
 {
-	const Gyro * m_p_gyro;
+	Gyro * m_p_gyro;
 	Motor* m_p_motor_1;
 	Motor* m_p_motor_2;
 	float m_start_yaw;
 	float m_target_angle;
 	int m_motor_speed;
+	unsigned int m_start_millis;
 	bool m_is_active;
+	bool m_is_started;
 
 public:
 
@@ -72,7 +74,7 @@ public:
 	 * Creates an object using the specified peripherals
 	 */
 	LogoTurn(
-		const Gyro& gyro,
+		Gyro& gyro,
 		Motor& motor_1,
 		Motor& motor_2
 	) throw ();
@@ -107,8 +109,11 @@ private:
 	float _maxAngle() const throw ();
 	float _minAngle() const throw ();
 
+	void _delayedStartIfNecessary () throw ();
 	void _turnMotorsOn (UInt8 direction) throw ();
 	void _turnMotorsOff () throw ();
+	void _enableGyro () throw ();
+	void _disableGyro () throw ();
 };
 
 
@@ -192,7 +197,7 @@ private:
 class LogoPen
 	: public LogoCommand
 {
-	Servo * m_p_servo;
+	ServoCtl * m_p_servo;
 	UInt8 m_up_angle;
 	UInt8 m_down_angle;
 	bool m_is_active;
@@ -202,7 +207,7 @@ public:
 	/**
 	 * Creates an object using the specified peripherals
 	 */
-	LogoPen(Servo& servo) throw ();
+	LogoPen(ServoCtl& servo) throw ();
 
 	/**
 	 * Starts the move of the pen
