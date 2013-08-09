@@ -41,6 +41,7 @@ RobotServer::setup () throw ()
 	m_servo.setup();
 
 	m_gyro.initialize(); // TODO: Error check?
+	m_gyro.disableUpdate();
 }
 
 
@@ -50,6 +51,7 @@ RobotServer::handleReset (const ResetRequest& req) throw ()
 	m_encoder_1.clearSubscriber();
 	m_encoder_2.clearSubscriber();
 	m_gyro.clearSubscriber();
+	m_gyro.disableUpdate();
 
 	m_servo.setBase();
 
@@ -166,9 +168,11 @@ RobotServer::_processMessage (const GyroReadingRequest& req)
 
 	if ( ! req.getIsSubscribe() ) {
 		m_gyro.clearSubscriber();
+		m_gyro.disableUpdate();
 	}
 	else {
 		m_gyro.setSubscriber( req.getTaskId(), req.getMinDelayMillis() );
+		m_gyro.setUpdateDelay(Gyro::SAFE_UPDATE_DELAY_MILLIS);
 	}
 }
 

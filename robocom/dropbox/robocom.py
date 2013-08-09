@@ -408,14 +408,14 @@ def moveMyServo (client):
             client.setServoAngle(i)
             time.sleep(0.1)
             client.flush()
-            #for i in range(0,181):
-            #client.setServoAngle(i)
-            #time.sleep(0.1)
-            #client.flush()
-            #for i in range(180,-1,-1):
-            #client.setServoAngle(i)
-            #time.sleep(0.1)
-            #client.flush()
+        for i in range(0,181):
+            client.setServoAngle(i)
+            time.sleep(0.1)
+            client.flush()
+        for i in range(180,-1,-1):
+            client.setServoAngle(i)
+            time.sleep(0.1)
+            client.flush()
 
 def subscribeAll (client):
     client.subscribeEncoder(0)
@@ -439,10 +439,13 @@ if __name__ == '__main__':
         client.reset()
         client.flush()
 
-        client.setDrive( 0, 100, 0, 100 )
-        
+        # Test with only bad motor running.
+        client.setDrive( 0, 100, 0, 0 )
+
+        subscribeAll(client)
+        testLoop(client, False)
     	#moveMyServo(client)
-        printGyro(client)
+        #printGyro(client)
         #spinMe(client)
     except KeyboardInterrupt:
         print "Interrupted"        

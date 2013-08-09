@@ -15,9 +15,11 @@ Gyro::Gyro() throw ()
 	, m_subscriber_task_id(0)
 	, m_min_report_delay_millis(0)
 	, m_last_report_millis(0)
+	, m_update_delay_millis(0)
 	, m_initialized(false)
 	, m_has_reading(false)
-    , m_has_subscriber(false) {
+    , m_has_subscriber(false)
+	, m_needs_update(true) {
 }
 
 
@@ -41,10 +43,18 @@ void Gyro::awaitFirstReading() throw () {
 }
 
 bool Gyro::updateReading() throw () {
+	// Apply update rate limit, if configured.
+	if (m_update_delay_millis != 0 && ! m_needs_update) {
+		const unsigned long cur_millis = ::millis();
+		if (cur_millis <= m_latest.millis + m_update_delay_millis) {
+			return false;
+		}
+		m_needs_update = true;
+    }
+
     // Get INT_STATUS byte
     const uint8_t mpu_int_status = m_mpu.getIntStatus();
 
-#if(1) // ART_DBG
     // get current FIFO count
     m_fifo_count = m_mpu.getFIFOCount();
 
@@ -79,11 +89,8 @@ bool Gyro::updateReading() throw () {
     m_latest.millis = ::millis();
 	
     m_has_reading = true;
+	m_needs_update = false;
     return true;
-#else
-    m_has_reading = true;
-	return true;
-#endif
 }
 
 void Gyro::printReading(HardwareSerial& serial, const Reading& reading) throw () {

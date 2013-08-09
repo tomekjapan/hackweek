@@ -5,6 +5,7 @@
 #ifndef GYRO_HPP
 #define GYRO_HPP
 
+#include <limits.h>
 #include <I2Cdev.h>
 
 #define MPU6050_INCLUDE_DMP_MOTIONAPPS20
@@ -19,6 +20,13 @@ class Gyro {
 	static const uint8_t MPU6050_INT_STATUS_DATA_READY = 0x02;
 	static const uint8_t MPU6050_INT_STATUS_FIFO_OVERFLOW = 0x10;
 public:
+	/**
+	 * HACK!  One of our motors seems to interfere with the gyro when it's
+	 * running, leading to a chance of hanging when reading over I2C.  We
+	 * can make it less likely by updating less frequently.
+     */
+	static const unsigned long SAFE_UPDATE_DELAY_MILLIS = 50;
+
 	/**
 	 * Represents a single reading of all data from the gyro.
 	 */
@@ -92,14 +100,18 @@ public:
 	static void printReading(HardwareSerial& serial, const Reading& reading) throw ();
 
 	void setSubscriber (uint16_t task_id, uint32_t min_delay_millis) throw ();
-
 	void clearSubscriber () throw ();
-
 	bool shouldReport () const throw ();
 	void setReported () throw ();
-
 	uint16_t getSubscriberTaskId () const throw () {
 		return m_subscriber_task_id;
+	}
+
+	void setUpdateDelay(unsigned long millis) throw() {
+		m_update_delay_millis = millis;
+	}
+	void disableUpdate() throw() {
+		setUpdateDelay(ULONG_MAX / 2);
 	}
 
 private:
@@ -116,10 +128,13 @@ private:
 	uint16_t m_subscriber_task_id;
 	unsigned long m_min_report_delay_millis;
 	unsigned long m_last_report_millis;
+
+	unsigned long m_update_delay_millis;
 	
 	bool m_initialized;
 	bool m_has_reading;
 	bool m_has_subscriber;
+	bool m_needs_update;
 };
 
 #endif // GYRO_HPP
