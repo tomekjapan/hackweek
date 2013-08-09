@@ -7,6 +7,13 @@
 #include "robocom/shared/msg/SetServoAngleRequest.hpp"
 #include "robocom/shared/msg/SimpleMessage.hxx"
 #include "robocom/shared/msg/WheelDriveChangedNotice.hpp"
+#include "robocom/shared/msg/LogoCompleteNotice.hpp"
+#include "robocom/shared/msg/LogoMoveRequest.hpp"
+#include "robocom/shared/msg/LogoPenRequest.hpp"
+#include "robocom/shared/msg/LogoTurnRequest.hpp"
+
+// Component includes
+#include "../LogoCommands.hpp"
 
 // Module include
 #include "../RobotServer.hpp"
@@ -24,7 +31,10 @@ RobotServer::RobotServer (StreamIO& stream) throw ()
 	, m_encoder_2( ENCODER_2_PIN )
 	, m_gyro()
 	, m_servo( SERVO_PIN, 90 /*base angle*/ )
-    , m_turn()
+	, m_p_logo_command(0)
+    , m_logo_turn( m_gyro, m_motor_1, m_motor_2 )
+	, m_logo_move( m_gyro, m_motor_1, m_motor_2, m_encoder_1, m_encoder_2 )
+	, m_logo_pen( m_servo )
 {
 }
 
@@ -55,8 +65,10 @@ RobotServer::handleReset (const ResetRequest& req) throw ()
 
 	m_servo.setBase();
 
+	_clearLogoCommand();
+
 	_setWheelDrive( 0, 0, 0, 0 );
-	_notifyWheelDriveChanged( req.asMessage() );
+	_notifyWheelDriveChanged( req.getTaskId() );
 }
 
 
@@ -98,6 +110,13 @@ RobotServer::handleStateUpdate () throw ()
 			_notifyGyroReading( m_gyro );
 			m_gyro.setReported();
 		}
+    }
+
+	if ( _hasLogoCommand() && _getLogoCommand().update() )
+	{
+		_notifyWheelDriveChanged( _getLogoCommand().getTaskId() );
+		_notifyLogoComplete( _getLogoCommand().getTaskId(), STATUS_OK );
+		_clearLogoCommand();
 	}
 }
 
@@ -118,7 +137,7 @@ RobotServer::_processMessage (const SetWheelDriveRequest& req) throw ()
 		req.getMotor2Signal()
 	);
 
-	_notifyWheelDriveChanged( req.asMessage() );
+	_notifyWheelDriveChanged( req.getTaskId() );
 }
 
 
@@ -158,6 +177,78 @@ RobotServer::_processMessage (const EncoderReadingRequest& req)
 
 
 void
+RobotServer::_processMessage (const LogoTurnRequest& req) throw ()
+{
+	if ( STATUS_OK != req.validate() )
+	{
+		_notifyLogoComplete( req.getTaskId(), req.validate() );
+		return;
+	}
+
+	if ( _hasLogoCommand() )
+	{
+		_notifyLogoComplete( req.getTaskId(), STATUS_E_LOGO_ACTIVE );
+		return;
+	}
+
+	const float angle = req.getDirection() == 0
+		? req.getAngle()
+		: -req.getAngle();
+
+	if ( m_logo_turn.start( req.getTaskId(), angle ) )
+	{
+		_setLogoCommand( m_logo_turn );
+		_notifyWheelDriveChanged( req.getTaskId() );
+	}
+}
+
+
+void
+RobotServer::_processMessage (const LogoMoveRequest& req) throw ()
+{
+	if ( STATUS_OK != req.validate() )
+	{
+		_notifyLogoComplete( req.getTaskId(), req.validate() );
+		return;
+	}
+
+	if ( _hasLogoCommand() )
+	{
+		_notifyLogoComplete( req.getTaskId(), STATUS_E_LOGO_ACTIVE );
+		return;
+	}
+
+	if ( m_logo_move.start(
+			 req.getTaskId(), req.getDirection(), req.getDistance() ) )
+	{
+		_setLogoCommand( m_logo_move );
+		_notifyWheelDriveChanged( req.getTaskId() );
+	}
+}
+
+
+void
+RobotServer::_processMessage (const LogoPenRequest& req) throw ()
+{
+	if ( STATUS_OK != req.validate() )
+	{
+		_notifyLogoComplete( req.getTaskId(), req.validate() );
+		return;
+	}
+
+	if ( _hasLogoCommand() )
+	{
+		_notifyLogoComplete( req.getTaskId(), STATUS_E_LOGO_ACTIVE );
+		return;
+	}
+
+	if ( m_logo_pen.start( req.getTaskId(), req.getDirection() ) ) {
+		_setLogoCommand( m_logo_pen );
+	}
+}
+
+
+void
 RobotServer::_processMessage (const GyroReadingRequest& req)
 {
 	if ( STATUS_OK != req.validate() )
@@ -178,11 +269,11 @@ RobotServer::_processMessage (const GyroReadingRequest& req)
 
 
 void
-RobotServer::_notifyWheelDriveChanged (const Message& msg) throw ()
+RobotServer::_notifyWheelDriveChanged (UInt16 task_id) throw ()
 {
 	addResponse(
 		WheelDriveChangedNotice(
-			msg.getTaskId(),
+			task_id,
 			getMillis(),
 			m_motor_1.getDirection(),
 			m_motor_1.getSignal(),
@@ -205,6 +296,22 @@ RobotServer::_notifyEncoderReading (const Encoder& encoder) throw ()
 			encoder.getId(),
 			encoder.getTotal(),
 			encoder.getMicros()
+		).asMessage()
+	);
+}
+
+
+void
+RobotServer::_notifyLogoComplete (
+	UInt16 task_id,
+	UInt8 completion_status
+) throw ()
+{
+	addResponse(
+		LogoCompleteNotice(
+			task_id,
+			getMillis(),
+			completion_status
 		).asMessage()
 	);
 }

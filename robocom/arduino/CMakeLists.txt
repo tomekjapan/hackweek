@@ -31,7 +31,8 @@ file(GLOB LIB_MPU6050_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/MPU6050/*.cp
 file(GLOB LIB_SERVO_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/Servo/*.cpp")
 
 set(robocom_arduino_BOARD uno)
-set(robocom_arduino_PORT /dev/tty.usbmodem1421)
+set(robocom_arduino_PORT /dev/ttyACM0) # tkowalczyk
+# set(robocom_arduino_PORT /dev/tty.usbmodem1421) # atwyman
 
 # Include shared sources directly instead of building them
 # as a library.
@@ -41,6 +42,9 @@ set(robocom_arduino_SRCS
   impl/Motor.cpp
   impl/Gyro.cpp
   impl/ServoCtl.cpp
+  impl/LogoTurn.cpp
+  impl/LogoMove.cpp
+  impl/LogoPen.cpp
   impl/main.cpp
   ${SHARED_SOURCE_FILES}
   ${SHARED_MSG_SOURCE_FILES}

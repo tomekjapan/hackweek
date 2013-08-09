@@ -8,7 +8,7 @@ set(WORKSPACE_ROOT "${PROJECT_SOURCE_DIR}/..")
 include_directories("${WORKSPACE_ROOT}")
 
 # Set location of files shared between arduino and the client
-set(SHARED_SOURCE_DIR "${WORKSPACE_ROOT}/src/robocom/shared")
+set(SHARED_SOURCE_DIR "${WORKSPACE_ROOT}/robocom/shared")
 
 # Enable all warnings and treat them as errors
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")

@@ -17,3 +17,7 @@ add_library(robocom_shared
 ##########################################################
 # Tests
 
+# atwyman: Comment out below
+add_subdirectory(test)
+
+add_test(NAME RoboComSharedTester COMMAND RoboComSharedTester)

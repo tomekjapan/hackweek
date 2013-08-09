@@ -1,5 +1,5 @@
 set(CMAKE_TOOLCHAIN_FILE
-  ../../../../3rdparty/arduino-cmake/cmake/ArduinoToolchain.cmake
+  ../../../../../arduino-cmake/cmake/ArduinoToolchain.cmake
   )
 
 cmake_minimum_required(VERSION 2.8)
