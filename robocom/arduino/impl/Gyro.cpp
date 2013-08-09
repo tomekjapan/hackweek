@@ -44,11 +44,12 @@ bool Gyro::updateReading() throw () {
     // Get INT_STATUS byte
     const uint8_t mpu_int_status = m_mpu.getIntStatus();
 
+#if(1) // ART_DBG
     // get current FIFO count
     m_fifo_count = m_mpu.getFIFOCount();
 
     // check for overflow (this should never happen unless our code is too inefficient)
-    if ((mpu_int_status & 0x10) || m_fifo_count >= 1024) {
+    if ((mpu_int_status & MPU6050_INT_STATUS_FIFO_OVERFLOW) || m_fifo_count >= 1024) {
         // reset so we can continue cleanly
         m_mpu.resetFIFO();
         return false;
@@ -58,7 +59,7 @@ bool Gyro::updateReading() throw () {
     if (0 == (mpu_int_status & MPU6050_INT_STATUS_DATA_READY)) {
 		return false;
     }
-    
+
     // wait for correct available data length, should be a VERY short wait
     while (m_fifo_count < m_packet_size) {
 		m_fifo_count = m_mpu.getFIFOCount();
@@ -79,6 +80,10 @@ bool Gyro::updateReading() throw () {
 	
     m_has_reading = true;
     return true;
+#else
+    m_has_reading = true;
+	return true;
+#endif
 }
 
 void Gyro::printReading(HardwareSerial& serial, const Reading& reading) throw () {

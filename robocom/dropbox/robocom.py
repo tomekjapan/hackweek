@@ -148,8 +148,8 @@ class SetWheelDriveRequest:
         bs.extend([self.m1dir, self.m1sig, self.m2dir, self.m2sig])
         return bs
     def __str__ (self):
-        return "SetWheelDriveRequest(taskId=%d, isImmediate=%d, m1dir=%s, m1sig=%s, m2dir=%s, m2sig=%s)" \
-          % (self.taskId, self.isImmediate, self.m1dir, self.m1sig, self.m2dir, self.m2sig)
+        return "SetWheelDriveRequest(taskId=%d, m1dir=%s, m1sig=%s, m2dir=%s, m2sig=%s)" \
+          % (self.taskId, self.m1dir, self.m1sig, self.m2dir, self.m2sig)
 
 class SetServoAngleRequest:
     def __init__ (self, servoId, angle):
@@ -161,6 +161,9 @@ class SetServoAngleRequest:
         bs.extend(serializeInt2(self.taskId))
         bs.extend([self.servoId, self.angle])
         return bs
+    def __str__ (self):
+        return "SetSetServoAngleRequest(taskId=%d, servoId=%d, angle=%s)" \
+          % (self.taskId, self.servoId, self.angle)
 
 class EncoderReadingRequest:
     def __init__ (self, encoderId, isSubscribe):
@@ -385,59 +388,42 @@ class Client:
         print msg
 
 def testLoop (client, timed):
-    try:
-        start = time.time()
-        while not timed or time.time() - start < 3.0:
-            time.sleep(0.1)
-            client.flush()
-    except KeyboardInterrupt:
-        print "Interrupted"
+    start = time.time()
+    while not timed or time.time() - start < 3.0:
+        time.sleep(0.1)
+        client.flush()
 
-def spinMe ():
-
-    client = Client()
-
-    # An "echo" message
-    client.echo()
-
-    client.reset()
-    client.flush()
-
+def spinMe (client):
     client.subscribeEncoder(0)
     client.subscribeEncoder(1)
 
     client.setDrive( 0, 100, 0, 100 )
     client.flush()
 
-    testLoop(client, True)
+    testLoop(client, False)
     
-    client.reset()
-    client.flush()
+def moveMyServo (client):
+    while True:
+        for i in [0, 90, 180, 90, 0]:
+            client.setServoAngle(i)
+            time.sleep(0.1)
+            client.flush()
+            #for i in range(0,181):
+            #client.setServoAngle(i)
+            #time.sleep(0.1)
+            #client.flush()
+            #for i in range(180,-1,-1):
+            #client.setServoAngle(i)
+            #time.sleep(0.1)
+            #client.flush()
 
-def moveMyServo ():
-
-    client = Client()
-    client.echo()
-    client.reset()
-    client.flush()
-
-    for i in range(30,181,30):
-        client.setServoAngle(i)
-        time.sleep(0.5)
-
-    client.reset()
-    client.flush()
-
-def printGyro ():
-    client = Client()
-
-    # An "echo" message
-    client.echo()
-
-    client.reset()
-    client.flush()
-
-    client.subscribeGyro(100)
+def subscribeAll (client):
+    client.subscribeEncoder(0)
+    client.subscribeEncoder(1)
+    client.subscribeGyro(1000)
+    
+def printGyro (client):
+    client.subscribeGyro(1000)
 
     client.flush()
 
@@ -447,4 +433,18 @@ def printGyro ():
     client.flush()
 
 if __name__ == '__main__':
-    printGyro()
+    client = Client()
+    try:
+        client.echo()
+        client.reset()
+        client.flush()
+
+        client.setDrive( 0, 100, 0, 100 )
+        
+    	#moveMyServo(client)
+        printGyro(client)
+        #spinMe(client)
+    except KeyboardInterrupt:
+        print "Interrupted"        
+    client.reset()
+    client.flush()

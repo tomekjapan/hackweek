@@ -28,6 +28,7 @@ file(GLOB LIB_WIRE_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/Wire/*.cpp")
 file(GLOB LIB_WIRE_C_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/Wire/*.c")
 file(GLOB LIB_I2CDEV_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/I2Cdev/*.cpp")
 file(GLOB LIB_MPU6050_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/MPU6050/*.cpp")
+file(GLOB LIB_SERVO_SOURCE_FILES "${PROJECT_SOURCE_DIR}/libraries/Servo/*.cpp")
 
 set(robocom_arduino_BOARD uno)
 set(robocom_arduino_PORT /dev/tty.usbmodem1421)
@@ -39,7 +40,7 @@ set(robocom_arduino_SRCS
   impl/Encoder.cpp
   impl/Motor.cpp
   impl/Gyro.cpp
-  impl/Servo.cpp
+  impl/ServoCtl.cpp
   impl/main.cpp
   ${SHARED_SOURCE_FILES}
   ${SHARED_MSG_SOURCE_FILES}
@@ -47,5 +48,8 @@ set(robocom_arduino_SRCS
   ${LIB_WIRE_C_SOURCE_FILES}
   ${LIB_I2CDEV_SOURCE_FILES}
   ${LIB_MPU6050_SOURCE_FILES}
+  ${LIB_SERVO_SOURCE_FILES}
 )
-generate_arduino_firmware(robocom_arduino)
+generate_arduino_firmware(robocom_arduino
+  BOARD uno
+  NO_AUTOLIBS)

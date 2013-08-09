@@ -17,6 +17,7 @@
 class Gyro {
 	static const int MPU6050_ADDRESS = 0x68;
 	static const uint8_t MPU6050_INT_STATUS_DATA_READY = 0x02;
+	static const uint8_t MPU6050_INT_STATUS_FIFO_OVERFLOW = 0x10;
 public:
 	/**
 	 * Represents a single reading of all data from the gyro.

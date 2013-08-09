@@ -1,10 +1,12 @@
 #ifndef SERVO_HPP
 #define SERVO_HPP
 
+#include <Servo.h>
+
 /**
  * Helper class for the servo control
  */
-class Servo
+class ServoCtl
 {
 public:
 
@@ -13,7 +15,7 @@ public:
 	 *
 	 * The base angle is the initial position of the servo.
 	 */
-	Servo (int pin, int base_angle) throw ();
+	ServoCtl (int pin, int base_angle) throw ();
 
 	/**
 	 * Sets up the servo's pin
@@ -51,6 +53,9 @@ public:
 
 private:
 
+#if(0)
+	Servo m_servo;
+#endif
 	int m_pin;
 	int m_base_angle;
 	int m_angle;

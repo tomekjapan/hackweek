@@ -5,7 +5,7 @@
 #include "Motor.hpp"
 #include "Encoder.hpp"
 #include "Gyro.hpp"
-#include "Servo.hpp"
+#include "ServoCtl.hpp"
 #include "LogoCommands.hpp"
 
 /**
@@ -160,7 +160,7 @@ private:
 
 	Gyro m_gyro;
 
-	Servo m_servo;
+	ServoCtl m_servo;
 
     LogoTurn m_turn;
 };
